@@ -430,3 +430,49 @@ h3 { margin: 0; font-size: 15px; font-weight: 600; color: var(--text); }
 .makeup-lightbox img { max-width: 92%; max-height: 80%; border-radius: 12px; }
 .makeup-lightbox p { color: #fff; margin-top: 12px; font-size: 14px; }
 .makeup-lightbox .ml-close { position: absolute; top: 16px; right: 20px; color: #fff; font-size: 30px; cursor: pointer; }
+
+/* ── Review summary (历史总结) ── */
+.rv-head { margin: 26px 4px 12px; }
+.rv-head h2 { margin: 2px 0 0; font-size: 19px; }
+.rv-head-flower { color: var(--rose); font-size: 15px; }
+.rv-sub { margin: 4px 0 0; font-size: 12px; color: var(--muted); }
+.rv-empty { padding: 26px 16px; text-align: center; color: var(--muted); font-size: 13.5px; line-height: 1.8; }
+.rv-empty p { margin: 0; }
+.rv-grid { margin-bottom: 12px; }
+.rv-tall { min-height: 96px; }
+.rv-spark { width: 100%; height: 44px; margin-top: 8px; display: block; }
+.rv-delta { display: block; font-style: normal; font-size: 10.5px; color: var(--muted); margin-top: 4px; }
+.rv-moods { margin-top: 7px; display: flex; flex-direction: column; gap: 4px; }
+.rv-mood-row { display: flex; justify-content: space-between; align-items: center; font-size: 12px; color: var(--text); }
+.rv-mood-row b { font-weight: 500; color: var(--muted); font-size: 11px; }
+.rv-pad { padding: 0 16px 14px; }
+.rv-kws { display: flex; flex-wrap: wrap; gap: 7px; }
+.rv-kw {
+  display: inline-flex; align-items: center; gap: 6px; padding: 5px 11px;
+  border-radius: 16px; font-size: 12px; color: var(--text);
+  background: var(--rose-pale);
+}
+.rv-kw.pos { background: var(--sage-c); }
+.rv-kw b { font-weight: 500; font-size: 10.5px; color: var(--muted); }
+.rv-time-row { display: flex; align-items: center; gap: 9px; padding: 8px 0; border-bottom: .5px solid rgba(240,220,216,.7); font-size: 12.5px; }
+.rv-time-row:last-child { border-bottom: none; }
+.rv-time-tag { color: var(--rose-dark); font-weight: 500; white-space: nowrap; }
+.rv-time-desc { flex: 1; color: var(--text); }
+.rv-time-row b { font-weight: 400; font-size: 11px; color: var(--muted); white-space: nowrap; }
+.rv-progress, .rv-advice { list-style: none; margin: 0; }
+.rv-progress li, .rv-advice li { position: relative; padding: 5px 0 5px 22px; font-size: 12.5px; line-height: 1.65; color: var(--text); }
+.rv-progress li::before { content: '✓'; position: absolute; left: 2px; color: var(--sage-dark); font-size: 12px; }
+.rv-advice li::before { content: '·'; position: absolute; left: 6px; color: var(--rose-dark); font-weight: 700; }
+.rv-ai-btn {
+  width: 100%; display: flex; align-items: center; gap: 11px; text-align: left;
+  padding: 13px 15px; margin-top: 4px; cursor: pointer; font-family: inherit;
+  border: 1.5px dashed var(--rose); border-radius: var(--radius);
+  background: var(--rose-pale); color: var(--text);
+}
+.rv-ai-btn:active { transform: scale(.985); }
+.rv-ai-icon { font-size: 21px; }
+.rv-ai-text { flex: 1; min-width: 0; }
+.rv-ai-text b { display: block; font-size: 14px; color: var(--rose-dark); }
+.rv-ai-text small { display: block; font-size: 11px; color: var(--muted); margin-top: 2px; }
+.rv-ai-arrow { font-size: 20px; color: var(--rose-dark); }
+.rv-ai-hint { margin: 9px 2px 0; font-size: 10.5px; color: var(--soft); }

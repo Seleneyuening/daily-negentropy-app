@@ -157,6 +157,75 @@
           <button class="primary-button full" type="submit">保存今日复盘</button>
           <p class="save-hint" id="reviewSaveHint">内容会自动保存在本地并同步到云端</p>
         </form>
+
+        <div class="rv-head">
+          <p class="section-kicker">LAST 30 DAYS</p>
+          <h2>历史总结 <span class="rv-head-flower">✿</span></h2>
+          <p class="rv-sub" id="rvRangeLabel"></p>
+        </div>
+
+        <div class="card rv-empty" id="rvEmpty" style="display:none">
+          <p>记录满 3 天复盘后，<br>这里会慢慢浮现出你的模式 🌱</p>
+        </div>
+
+        <div id="rvBody">
+          <div class="summary-grid rv-grid">
+            <article class="summary-card rose rv-tall">
+              <span>整体趋势</span>
+              <svg class="rv-spark" id="rvSpark" viewBox="0 0 100 36" preserveAspectRatio="none" aria-hidden="true"></svg>
+            </article>
+            <article class="summary-card cream">
+              <span>平均完成率</span>
+              <strong id="rvAvg">0%</strong>
+              <em class="rv-delta" id="rvDelta"></em>
+            </article>
+            <article class="summary-card lilac">
+              <span>复盘天数</span>
+              <strong id="rvDays">0 天</strong>
+              <em class="rv-delta" id="rvStreak"></em>
+            </article>
+            <article class="summary-card sage-summary rv-tall">
+              <span>高频情绪 TOP3</span>
+              <div class="rv-moods" id="rvMoods"></div>
+            </article>
+          </div>
+
+          <section class="card section-card">
+            <div class="section-heading">
+              <div><p class="section-kicker">KEYWORDS</p><h3>高频关键词</h3></div>
+            </div>
+            <div class="rv-pad rv-kws" id="rvKeywords"></div>
+          </section>
+
+          <section class="card section-card" id="rvTimeCard">
+            <div class="section-heading">
+              <div><p class="section-kicker">WHEN</p><h3>常见卡点时段</h3></div>
+            </div>
+            <div class="rv-pad" id="rvTimes"></div>
+          </section>
+
+          <section class="card section-card">
+            <div class="section-heading">
+              <div><p class="section-kicker">GROWING</p><h3>你的进步 🌿</h3></div>
+            </div>
+            <ul class="rv-pad rv-progress" id="rvProgress"></ul>
+          </section>
+
+          <section class="card section-card rv-advice-card">
+            <div class="section-heading">
+              <div><p class="section-kicker">GENTLE HINTS</p><h3>系统建议</h3></div>
+            </div>
+            <ul class="rv-pad rv-advice" id="rvAdvice"></ul>
+            <div class="rv-pad">
+              <button class="rv-ai-btn" id="rvAiBtn" type="button">
+                <span class="rv-ai-icon">🤖</span>
+                <span class="rv-ai-text"><b>AI 深度分析</b><small>一键复制 30 天记录，粘贴给 AI 生成个性化洞察</small></span>
+                <span class="rv-ai-arrow">›</span>
+              </button>
+              <p class="rv-ai-hint">以上为本地统计与共性规律建议 · 需要更深洞察时再调用 AI</p>
+            </div>
+          </section>
+        </div>
       </section>
 
       <section class="page" id="historyPage">
@@ -323,6 +392,6 @@
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="app.js?v=20260627-makeup1"></script>
+  <script src="app.js?v=20260704-review1"></script>
 </body>
 </html>

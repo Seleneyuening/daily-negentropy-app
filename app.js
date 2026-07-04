@@ -369,6 +369,7 @@ function switchPage(page) {
   $$('.page').forEach((section) => section.classList.toggle('active', section.id === `${page}Page`));
   $$('.nav-item').forEach((button) => button.classList.toggle('active', button.dataset.page === page));
   if (page === 'history') renderHistory();
+  if (page === 'review') renderReviewSummary();
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
@@ -462,6 +463,7 @@ elements.reviewForm.addEventListener('submit', (event) => {
   saveRecords();
   elements.reviewSaveHint.textContent = `已保存 · ${nowTime()}`;
   renderHistory();
+  renderReviewSummary();
   toast('复盘已保存');
 });
 
@@ -555,6 +557,190 @@ $$('[data-page]').forEach((button) => button.addEventListener('click', () => {
 }));
 $('#openReview').addEventListener('click', () => switchPage('review'));
 $('#jumpToday').addEventListener('click', () => { setSelectedDate(localDateKey()); switchPage('today'); });
+
+// ── Review summary (最近30天历史总结) ──
+const RV_WINDOW = 30;
+const RV_MOOD_EMOJI = { '很棒': '🥰', '开心': '😊', '平静': '😌', '疲惫': '😮‍💨', '低落': '🥺' };
+const RV_KEYWORDS = [
+  ['拖延 / 启动困难', /拖延|磨蹭|不想动|不想做|启动|开始不了|一直没开始/, 'neg'],
+  ['刷手机 / 分心', /手机|短视频|分心|走神|刷/, 'neg'],
+  ['能量不足 / 疲惫', /疲惫|疲倦|好累|很累|太累|没精神|没力气|乏/, 'neg'],
+  ['睡眠不足', /失眠|晚睡|熬夜|睡不着|睡太晚|没睡好/, 'neg'],
+  ['任务安排过多', /太多|做不完|排太满|贪多/, 'neg'],
+  ['情绪内耗', /焦虑|烦躁|内耗|emo|自责|难过/, 'neg'],
+  ['英语学习', /英语/, 'pos'],
+  ['化妆 / 护肤', /化妆|护肤|妆容|画眉/, 'pos'],
+  ['记账', /记账|记了账/, 'pos'],
+  ['早起', /早起|起床后/, 'pos'],
+  ['运动 / 走路', /运动|走路|锻炼|拉伸|散步/, 'pos'],
+  ['阅读', /阅读|看书|读书/, 'pos']
+];
+const RV_TIME_BUCKETS = [
+  ['上午', /上午|早上|一睁眼|醒来|起床后/, '容易分心 / 启动难'],
+  ['下午', /下午|午后/, '容易能量下降'],
+  ['晚上', /晚上|夜里|睡前|入睡前/, '动力和效率偏低']
+];
+
+function rvDayKeys(count, endOffset = 0) {
+  const keys = [];
+  const end = new Date();
+  end.setDate(end.getDate() - endOffset);
+  for (let i = count - 1; i >= 0; i--) {
+    const d = new Date(end);
+    d.setDate(end.getDate() - i);
+    keys.push(localDateKey(d));
+  }
+  return keys;
+}
+
+function rvHasReview(key) {
+  const r = records[key]?.review;
+  if (!r) return false;
+  return ['done', 'undone', 'problems', 'improve', 'note', 'mood'].some((f) => String(r[f] || '').trim());
+}
+
+function rvCompletion(key) {
+  const tasks = records[key]?.tasks;
+  if (!Array.isArray(tasks) || !tasks.length) return 0;
+  return Math.round(tasks.filter((t) => t.completed).length / tasks.length * 100);
+}
+
+function rvAvgCompletion(keys) {
+  const active = keys.filter((k) => records[k]?.tasks?.some((t) => t.completed) || rvHasReview(k));
+  if (!active.length) return null;
+  return Math.round(active.reduce((s, k) => s + rvCompletion(k), 0) / active.length);
+}
+
+function rvReviewText(key, fields = ['done', 'undone', 'problems', 'improve', 'note']) {
+  const r = records[key]?.review || {};
+  return fields.map((f) => String(r[f] || '')).join(' ');
+}
+
+function rvReviewStreak() {
+  let streak = 0;
+  const cursor = new Date();
+  while (rvHasReview(localDateKey(cursor))) {
+    streak += 1;
+    cursor.setDate(cursor.getDate() - 1);
+  }
+  return streak;
+}
+
+function rvSparkline(keys) {
+  const svg = $('#rvSpark');
+  const pts = keys.map((k, i) => {
+    const x = keys.length > 1 ? (i / (keys.length - 1)) * 100 : 0;
+    const y = 33 - (rvCompletion(k) / 100) * 28;
+    return [x.toFixed(1), y.toFixed(1)];
+  });
+  const line = pts.map((p) => p.join(',')).join(' ');
+  svg.innerHTML = `
+    <polygon points="0,33 ${line} 100,33" fill="rgba(233,169,167,.25)"></polygon>
+    <polyline points="${line}" fill="none" stroke="var(--rose-dark)" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"></polyline>`;
+}
+
+function renderReviewSummary() {
+  const keys = rvDayKeys(RV_WINDOW);
+  const reviewDays = keys.filter(rvHasReview);
+
+  const fmt = (k) => `${Number(k.slice(5, 7))}月${Number(k.slice(8, 10))}日`;
+  $('#rvRangeLabel').textContent = `基于最近 ${RV_WINDOW} 天（${fmt(keys[0])} – ${fmt(keys[keys.length - 1])}）的复盘记录`;
+
+  const empty = reviewDays.length < 3;
+  $('#rvEmpty').style.display = empty ? '' : 'none';
+  $('#rvBody').style.display = empty ? 'none' : '';
+  if (empty) return;
+
+  // 趋势 + 平均完成率（较上个 30 天周期）
+  rvSparkline(keys);
+  const avg = rvAvgCompletion(keys) ?? 0;
+  const prevAvg = rvAvgCompletion(rvDayKeys(RV_WINDOW, RV_WINDOW));
+  $('#rvAvg').textContent = `${avg}%`;
+  $('#rvDelta').textContent = prevAvg === null ? '' :
+    avg > prevAvg ? `较上周期 ↑ ${avg - prevAvg}%` :
+    avg < prevAvg ? `较上周期 ↓ ${prevAvg - avg}%` : '与上周期持平';
+
+  // 复盘天数 + 连续复盘
+  $('#rvDays').textContent = `${reviewDays.length} 天`;
+  const streak = rvReviewStreak();
+  $('#rvStreak').textContent = streak ? `连续复盘 ${streak} 天` : '';
+
+  // 高频情绪 TOP3
+  const moodCount = {};
+  reviewDays.forEach((k) => {
+    const m = records[k].review.mood;
+    if (m) moodCount[m] = (moodCount[m] || 0) + 1;
+  });
+  const topMoods = Object.entries(moodCount).sort((a, b) => b[1] - a[1]).slice(0, 3);
+  $('#rvMoods').innerHTML = topMoods.length
+    ? topMoods.map(([m, n]) => `<div class="rv-mood-row"><span>${RV_MOOD_EMOJI[m] || '·'} ${m}</span><b>${n} 次</b></div>`).join('')
+    : '<div class="rv-mood-row"><span>还没有心情记录</span></div>';
+
+  // 高频关键词（按出现天数）
+  const kwCount = RV_KEYWORDS.map(([label, re, tone]) => ({
+    label, tone,
+    n: reviewDays.filter((k) => re.test(rvReviewText(k))).length
+  })).filter((k) => k.n > 0).sort((a, b) => b.n - a.n).slice(0, 10);
+  $('#rvKeywords').innerHTML = kwCount.length
+    ? kwCount.map((k) => `<span class="rv-kw ${k.tone}">${k.label}<b>${k.n}次</b></span>`).join('')
+    : '<p class="history-muted" style="margin:4px 0">复盘写得多一些，关键词会自己浮现出来。</p>';
+
+  // 常见卡点时段（只扫「没完成 / 问题」两栏）
+  const timeCount = RV_TIME_BUCKETS.map(([label, re, desc]) => ({
+    label, desc,
+    n: reviewDays.filter((k) => re.test(rvReviewText(k, ['undone', 'problems']))).length
+  })).filter((t) => t.n > 0).sort((a, b) => b.n - a.n);
+  $('#rvTimeCard').style.display = timeCount.length ? '' : 'none';
+  $('#rvTimes').innerHTML = timeCount.map((t) =>
+    `<div class="rv-time-row"><span class="rv-time-tag">◷ ${t.label}</span><span class="rv-time-desc">${t.desc}</span><b>${t.n} 次提到</b></div>`).join('');
+
+  // 你的进步（温和的正向规则）
+  const progress = [];
+  if (streak >= 3) progress.push(`已连续复盘 ${streak} 天，复盘越来越稳定了 ✨`);
+  if (prevAvg !== null && avg > prevAvg) progress.push(`平均完成率比上个周期提升了 ${avg - prevAvg}%`);
+  if (kwCount.some((k) => k.tone === 'neg')) progress.push('开始能识别自己的卡点了');
+  const posKw = kwCount.filter((k) => k.tone === 'pos').slice(0, 2);
+  if (posKw.length) progress.push(`「${posKw.map((k) => k.label).join('」「')}」在慢慢累积中 💛`);
+  if (!progress.length) progress.push('已经开始记录自己，这就是最重要的一步 💛');
+  $('#rvProgress').innerHTML = progress.slice(0, 4).map((p) => `<li>${p}</li>`).join('');
+
+  // 系统建议（基于共性规律，最多 3 条）
+  const advice = [];
+  const kwTop = kwCount.map((k) => k.label);
+  if (kwTop[0] && kwCount[0].tone === 'neg') advice.push(`「${kwTop[0]}」出现频率较高，建议把最重要的一件事放在起床后先做。`);
+  if ((moodCount['疲惫'] || 0) + (moodCount['低落'] || 0) >= reviewDays.length / 3) advice.push('「疲惫 / 低落」占比不小，晚间安排以恢复和整理为主，别排硬任务。');
+  if (kwTop.includes('刷手机 / 分心')) advice.push('分心多和手机有关，做核心事时试着把手机放到视线之外。');
+  advice.push('同时推进的事越少越容易坚持，选 1–2 个核心任务深耕就好。');
+  $('#rvAdvice').innerHTML = advice.slice(0, 3).map((a) => `<li>${a}</li>`).join('');
+}
+
+async function rvCopyText(text) {
+  try { await navigator.clipboard.writeText(text); return true; }
+  catch {
+    const ta = document.createElement('textarea');
+    ta.value = text; document.body.appendChild(ta); ta.select();
+    const ok = document.execCommand('copy'); ta.remove(); return ok;
+  }
+}
+
+$('#rvAiBtn').addEventListener('click', async () => {
+  const keys = rvDayKeys(RV_WINDOW).filter(rvHasReview);
+  if (!keys.length) { toast('还没有复盘记录可以分析'); return; }
+  const lines = keys.map((k) => {
+    const r = records[k].review;
+    const parts = [`【${k}】完成率${rvCompletion(k)}%`];
+    if (r.mood) parts.push(`心情:${r.mood}`);
+    if (r.done) parts.push(`完成:${r.done}`);
+    if (r.undone) parts.push(`没完成:${r.undone}`);
+    if (r.problems) parts.push(`问题:${r.problems}`);
+    if (r.improve) parts.push(`想改进:${r.improve}`);
+    if (r.note) parts.push(`备注:${r.note}`);
+    return parts.join(' | ');
+  });
+  const prompt = `以下是我最近 ${keys.length} 天的每日复盘记录。请帮我做深度分析：1) 我最常卡住的重复模式是什么；2) 什么事情我经常能做成、可以依靠；3) 情绪和效率的规律；4) 最值得优先调整的一个点（只要一个）。请温和、具体，不要说教。\n\n${lines.join('\n')}`;
+  const ok = await rvCopyText(prompt);
+  toast(ok ? '已复制 30 天记录 ✓ 粘贴给 AI 即可深度分析' : '复制失败，请重试');
+});
 
 // ── Makeup album ──
 const MAKEUP_BUCKET = 'makeup-photos';
