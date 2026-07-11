@@ -3,51 +3,67 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <meta name="theme-color" content="#fff9f7">
-  <title>日常负熵 · 每日小记</title>
-  <link rel="stylesheet" href="style.css">
+  <meta name="theme-color" content="#faf6f1">
+  <title>Project Selene · 成为镜子里的自己也会喜欢的人</title>
+  <link rel="stylesheet" href="style.css?v=selene1">
 </head>
 <body>
   <div class="app-shell">
+
     <header class="topbar">
       <div>
-        <p class="eyebrow" id="todayLabel"></p>
-        <h1>日常负熵 <span>✿</span></h1>
+        <h1 class="brand">Project Selene <span class="brand-moon">☾</span></h1>
+        <p class="brand-sub">Becoming the woman I want to see in the mirror.</p>
         <p class="cloud-status" id="cloudStatus">本地保存 · 正在连接云端</p>
       </div>
       <button class="icon-button" id="jumpToday" type="button" aria-label="回到今天">今</button>
     </header>
 
     <main>
+
+      <!-- ═══════════ 1. TODAY ═══════════ -->
       <section class="page active" id="todayPage">
-        <div class="date-row card soft-card">
-          <label for="recordDate">查看日期</label>
-          <input id="recordDate" type="date">
+
+        <div class="date-strip">
+          <div>
+            <p class="date-main" id="todayLabel"></p>
+            <p class="date-sub" id="dayNumber"></p>
+          </div>
+          <input id="recordDate" type="date" aria-label="查看日期">
         </div>
 
-        <div class="summary-grid">
-          <article class="summary-card rose">
-            <span>完成率</span>
-            <strong id="completionRate">0%</strong>
-          </article>
-          <button class="summary-card cream" id="openReview" type="button">
-            <span>今日复盘</span>
-            <strong>去记录 →</strong>
-          </button>
-          <article class="summary-card lilac">
-            <span>今日付款</span>
-            <strong id="paymentTotal">¥0.00</strong>
-          </article>
-          <article class="summary-card sage-summary">
-            <span>连续打卡</span>
-            <strong id="streakDays">0 天</strong>
-          </article>
+        <div class="stat-pills">
+          <article class="stat-pill"><span>连续天数</span><strong id="streakDays">0</strong><em>Days</em></article>
+          <article class="stat-pill accent"><span>本周完成率</span><strong id="weekRate">0%</strong><em id="weekRateSub"></em></article>
+          <article class="stat-pill"><span>累计记录</span><strong id="totalDays">0</strong><em>Days</em></article>
         </div>
 
-        <div id="yesterdayImprove" style="display:none" class="improve-banner">
-          <p class="improve-label">✦ 昨日复盘 · 今天要改进</p>
-          <p class="improve-text" id="yesterdayImproveText"></p>
+        <div class="greeting-card">
+          <p class="greeting-en" id="greetingEn">Good morning, Selene.</p>
+          <p class="greeting-zh" id="greetingZh">今天不需要完美，只需要完成最小行动。</p>
+          <p class="greeting-principle">我的目标不是更瘦，而是更协调、更健康、更有自己的风格。</p>
+          <span class="greeting-flower">✿</span>
         </div>
+
+        <div id="tomorrowBanner" class="improve-banner" style="display:none">
+          <p class="improve-label">✦ 昨日复盘 · 今天的最小行动</p>
+          <p class="improve-text" id="tomorrowBannerText"></p>
+        </div>
+
+        <section class="card section-card">
+          <div class="section-heading">
+            <div>
+              <p class="section-kicker">TODAY'S PROGRESS</p>
+              <h2>今日进度</h2>
+            </div>
+            <button class="low-energy-toggle" id="lowEnergyBtn" type="button">☾ 低能量模式</button>
+          </div>
+          <div class="progress-block">
+            <p class="progress-count"><strong id="doneCount">0</strong> / <span id="targetCount">8</span> <em>completed</em></p>
+            <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+            <p class="progress-status" id="progressStatus">今天还没有开始。先完成一个最小行动。</p>
+          </div>
+        </section>
 
         <section class="card section-card">
           <div class="section-heading">
@@ -57,34 +73,90 @@
             </div>
             <span class="count-badge" id="taskCount">0 / 0</span>
           </div>
+          <div id="taskList"></div>
           <form class="inline-form" id="taskForm">
-            <input id="taskInput" type="text" maxlength="80" placeholder="写下一件想完成的事…" required>
+            <input id="taskInput" type="text" maxlength="60" placeholder="添加一个自定义任务…" required>
             <button type="submit">添加</button>
           </form>
-          <div id="taskList"></div>
+          <p class="soft-hint">达到 <b id="thresholdHint">5</b> 项就算成功 · 不需要一次做完</p>
         </section>
 
         <section class="card section-card">
           <div class="section-heading">
             <div>
+              <p class="section-kicker">MOOD</p>
+              <h2>今日心情</h2>
+            </div>
+          </div>
+          <div class="mood-chips" id="moodChips"></div>
+          <div class="field full mood-note-field">
+            <label for="moodNote">今天我对自己的感觉是……</label>
+            <input id="moodNote" type="text" maxlength="120" placeholder="写一句就好">
+          </div>
+        </section>
+
+        <section class="card section-card">
+          <div class="section-heading">
+            <div>
+              <p class="section-kicker">DAILY PHOTO</p>
+              <h2>今日照片</h2>
+            </div>
+          </div>
+          <div class="photo-upload-row">
+            <button class="photo-upload-btn" data-ptype="全身" type="button">＋ 全身照</button>
+            <button class="photo-upload-btn" data-ptype="半身" type="button">＋ 半身照</button>
+            <button class="photo-upload-btn" data-ptype="妆容" type="button">＋ 妆容照</button>
+          </div>
+          <div class="photo-grid" id="todayPhotoGrid"></div>
+          <input type="file" id="photoFile" accept="image/*" hidden>
+        </section>
+
+        <section class="card section-card">
+          <div class="section-heading">
+            <div>
+              <p class="section-kicker">ONE-LINE REVIEW</p>
+              <h2>今日一句话复盘</h2>
+            </div>
+          </div>
+          <form class="review-mini-form" id="miniReviewForm">
+            <div class="field full">
+              <label for="rvBest">今天做得最好的一件事</label>
+              <input id="rvBest" type="text" maxlength="200" placeholder="小小的也算">
+            </div>
+            <div class="field full">
+              <label for="rvImproveToday">今天最想改进的一件事</label>
+              <input id="rvImproveToday" type="text" maxlength="200" placeholder="温和地记下来">
+            </div>
+            <div class="field full">
+              <label for="rvTomorrow">明天最小行动是什么</label>
+              <input id="rvTomorrow" type="text" maxlength="200" placeholder="越小越容易开始">
+            </div>
+            <button class="primary-button full" type="submit">保存复盘</button>
+            <p class="save-hint" id="miniReviewHint">内容会自动保存在本地并同步到云端</p>
+          </form>
+        </section>
+
+      </section>
+
+      <!-- ═══════════ FINANCE ═══════════ -->
+      <section class="page" id="financePage">
+        <div class="page-head">
+          <p class="section-kicker">FINANCE</p>
+          <h2>财务汇总</h2>
+        </div>
+
+        <section class="card section-card">
+          <div class="section-heading">
+            <div>
               <p class="section-kicker">PAYMENTS</p>
-              <h2>付款记录</h2>
+              <h3>付款记录</h3>
             </div>
             <strong class="mini-total" id="paymentMiniTotal">¥0.00</strong>
           </div>
           <form class="payment-form" id="paymentForm">
             <div class="field full">
               <label>消费分类</label>
-              <div class="payment-cat-chips" id="payCatChips">
-                <div class="payment-cat-chip active" data-cat="餐饮" onclick="selectPayCat(this)">🍜 餐饮</div>
-                <div class="payment-cat-chip" data-cat="购物" onclick="selectPayCat(this)">🛍 购物</div>
-                <div class="payment-cat-chip" data-cat="交通" onclick="selectPayCat(this)">🚌 交通</div>
-                <div class="payment-cat-chip" data-cat="娱乐" onclick="selectPayCat(this)">🎬 娱乐</div>
-                <div class="payment-cat-chip" data-cat="生活" onclick="selectPayCat(this)">🏠 生活</div>
-                <div class="payment-cat-chip" data-cat="学习" onclick="selectPayCat(this)">📚 学习</div>
-                <div class="payment-cat-chip" data-cat="健康" onclick="selectPayCat(this)">💊 健康</div>
-                <div class="payment-cat-chip" data-cat="其他" onclick="selectPayCat(this)">💸 其他</div>
-              </div>
+              <div class="payment-cat-chips" id="payCatChips"></div>
             </div>
             <div class="field">
               <label for="paymentItem">付款项目</label>
@@ -100,9 +172,7 @@
             </div>
             <div class="field">
               <label for="paymentMethod">支付方式</label>
-              <select id="paymentMethod">
-                <option>微信</option>
-              </select>
+              <select id="paymentMethod"><option>微信</option></select>
             </div>
             <div class="field full">
               <label for="paymentNote">备注</label>
@@ -113,50 +183,394 @@
           <div class="empty-state" id="paymentEmpty">今天还没有付款记录。</div>
           <div class="payment-list" id="paymentList"></div>
         </section>
+
+        <div class="fin-month-nav card soft-card">
+          <button class="fin-nav-btn" id="finPrev" type="button">‹</button>
+          <span id="finMonthLabel"></span>
+          <button class="fin-nav-btn" id="finNext" type="button">›</button>
+        </div>
+
+        <div class="stat-pills fin-pills" id="finStats"></div>
+
+        <section class="card section-card">
+          <div class="section-heading">
+            <div><p class="section-kicker">BY CATEGORY</p><h3>分类汇总</h3></div>
+          </div>
+          <div class="fin-pad" id="finMethodBreakdown"></div>
+        </section>
+
+        <section class="card section-card">
+          <div class="section-heading">
+            <div><p class="section-kicker">RECORDS</p><h3>本月明细</h3></div>
+            <span class="count-badge" id="finRecordBadge">0 笔</span>
+          </div>
+          <div class="empty-state" id="finEmpty">本月暂无支出记录。</div>
+          <div class="fin-pad" id="finRecordList"></div>
+        </section>
       </section>
 
-      <section class="page" id="reviewPage">
-        <div class="page-title">
-          <button class="back-button" data-page="today" type="button">←</button>
-          <div>
-            <p class="section-kicker" id="reviewDateLabel"></p>
-            <h2>今日复盘</h2>
+      <!-- ═══════════ 2. PROGRESS ═══════════ -->
+      <section class="page" id="progressPage">
+        <div class="page-head">
+          <p class="section-kicker">PROGRESS</p>
+          <h2>进步记录</h2>
+        </div>
+
+        <section class="card section-card">
+          <div class="section-heading">
+            <div>
+              <p class="section-kicker">HEATMAP</p>
+              <h3>日历热力图</h3>
+            </div>
+            <div class="seg-toggle" id="heatRangeToggle">
+              <button class="active" data-range="30" type="button">30天</button>
+              <button data-range="90" type="button">90天</button>
+              <button data-range="all" type="button">全部</button>
+            </div>
+          </div>
+          <div class="heatmap-wrap" id="heatmap"></div>
+          <div class="heat-legend">
+            <span class="heat-cell l0"></span>0–2
+            <span class="heat-cell l1"></span>3–4
+            <span class="heat-cell l2"></span>5–6
+            <span class="heat-cell l3"></span>7–8
+          </div>
+        </section>
+
+        <section class="card section-card">
+          <div class="section-heading">
+            <div><p class="section-kicker">STATISTICS</p><h3>数据统计</h3></div>
+          </div>
+          <div class="stat-grid" id="progressStats"></div>
+        </section>
+
+        <section class="card section-card">
+          <div class="section-heading">
+            <div><p class="section-kicker">BY CATEGORY · 30D</p><h3>分类进步</h3></div>
+          </div>
+          <div class="chart-pad">
+            <div class="chart-legend" id="catLegend"></div>
+            <svg id="catChart" viewBox="0 0 340 150" preserveAspectRatio="none" aria-hidden="true"></svg>
+          </div>
+        </section>
+
+        <section class="card section-card">
+          <div class="section-heading">
+            <div><p class="section-kicker">COMPARE</p><h3>前后对比</h3></div>
+          </div>
+          <div class="compare-controls">
+            <select id="compareA" aria-label="对比日期一"></select>
+            <span class="compare-vs">vs</span>
+            <select id="compareB" aria-label="对比日期二"></select>
+          </div>
+          <div class="compare-view" id="compareView"></div>
+          <p class="soft-hint">对比自己的变化，不与别人比较。</p>
+        </section>
+
+        <section class="card section-card">
+          <div class="section-heading">
+            <div><p class="section-kicker">TIMELINE</p><h3>照片时间轴</h3></div>
+          </div>
+          <div class="filter-chips" id="photoFilter">
+            <button class="active" data-pf="全部" type="button">全部</button>
+            <button data-pf="全身" type="button">全身</button>
+            <button data-pf="半身" type="button">半身</button>
+            <button data-pf="妆容" type="button">妆容</button>
+            <button data-pf="穿搭" type="button">穿搭</button>
+          </div>
+          <div class="timeline-grid" id="photoTimeline"></div>
+        </section>
+      </section>
+
+      <!-- ═══════════ 3. BODY ═══════════ -->
+      <section class="page" id="bodyPage">
+        <div class="page-head">
+          <p class="section-kicker">BODY</p>
+          <h2>身材与体态</h2>
+        </div>
+
+        <section class="card section-card">
+          <div class="section-heading">
+            <div><p class="section-kicker">RECORDS</p><h3>身体数据</h3></div>
+            <span class="soft-tag">不要求每天填写</span>
+          </div>
+          <form class="body-form" id="bodyForm">
+            <div class="field"><label for="bWeight">体重 kg</label><input id="bWeight" type="number" step="0.1" min="0" inputmode="decimal" placeholder="—"></div>
+            <div class="field"><label for="bWaist">腰围 cm</label><input id="bWaist" type="number" step="0.1" min="0" inputmode="decimal" placeholder="—"></div>
+            <div class="field"><label for="bHip">臀围 cm</label><input id="bHip" type="number" step="0.1" min="0" inputmode="decimal" placeholder="—"></div>
+            <div class="field"><label for="bThigh">大腿围 cm</label><input id="bThigh" type="number" step="0.1" min="0" inputmode="decimal" placeholder="—"></div>
+            <div class="field"><label for="bArm">上臂围 cm</label><input id="bArm" type="number" step="0.1" min="0" inputmode="decimal" placeholder="—"></div>
+            <div class="field"><label for="bSteps">每日步数</label><input id="bSteps" type="number" step="1" min="0" inputmode="numeric" placeholder="—"></div>
+            <div class="field"><label for="bSleep">睡眠 小时</label><input id="bSleep" type="number" step="0.1" min="0" inputmode="decimal" placeholder="—"></div>
+            <div class="field"><label for="bExercise">运动 分钟</label><input id="bExercise" type="number" step="1" min="0" inputmode="numeric" placeholder="—"></div>
+            <button class="primary-button full" type="submit">保存今日数据</button>
+          </form>
+        </section>
+
+        <section class="card section-card">
+          <div class="section-heading">
+            <div><p class="section-kicker">TRENDS</p><h3>趋势</h3></div>
+          </div>
+          <div class="trend-list" id="bodyTrends"></div>
+        </section>
+
+        <div class="quote-card moon">
+          <p>不追求快速减重。<br>目标是保持肌肉、改善比例、让线条更轻盈。</p>
+          <span class="quote-flower">❀</span>
+        </div>
+
+        <section class="card section-card">
+          <div class="section-heading">
+            <div><p class="section-kicker">POSTURE</p><h3>仪态练习</h3></div>
+          </div>
+          <div id="postureList"></div>
+        </section>
+
+        <section class="card section-card">
+          <div class="section-heading">
+            <div><p class="section-kicker">WEEKLY GOALS</p><h3>本周身体目标</h3></div>
+            <span class="soft-tag">最多 3 个</span>
+          </div>
+          <div id="bodyGoalList"></div>
+          <form class="inline-form" id="bodyGoalForm">
+            <input id="bodyGoalInput" type="text" maxlength="40" placeholder="例如：本周步行 5 天" required>
+            <button type="submit">添加</button>
+          </form>
+          <p class="soft-hint">避免一次设置太多目标。</p>
+        </section>
+      </section>
+
+      <!-- ═══════════ 4. BEAUTY ═══════════ -->
+      <section class="page" id="beautyPage">
+        <div class="page-head">
+          <p class="section-kicker">BEAUTY</p>
+          <h2>妆容与护理</h2>
+        </div>
+
+        <div class="seg-toggle wide" id="beautyTabs">
+          <button class="active" data-btab="makeup" type="button">Makeup</button>
+          <button data-btab="skincare" type="button">Skincare</button>
+          <button data-btab="hair" type="button">Hair</button>
+        </div>
+
+        <div class="btab active" id="btab-makeup">
+          <section class="card section-card">
+            <div class="section-heading">
+              <div><p class="section-kicker">WEEKLY FOCUS</p><h3>本周练习重点</h3></div>
+            </div>
+            <div class="focus-chips" id="focusChips"></div>
+            <p class="soft-hint">每周只设置一个重点，避免同时学太多。</p>
+          </section>
+
+          <section class="card section-card">
+            <div class="section-heading">
+              <div><p class="section-kicker">PRACTICE</p><h3>化妆练习</h3></div>
+              <span class="count-badge" id="makeupPracticeBadge"></span>
+            </div>
+            <div id="makeupSteps"></div>
+          </section>
+
+          <section class="card section-card">
+            <div class="section-heading">
+              <div><p class="section-kicker">TODAY'S ALBUM</p><h3 id="makeupDateLabel">今天</h3></div>
+            </div>
+            <div class="makeup-slots">
+              <button class="makeup-slot" id="slotBefore" type="button"><span class="ms-emoji">📷</span><span class="ms-label">素颜 before</span></button>
+              <button class="makeup-slot" id="slotAfter" type="button"><span class="ms-emoji">💄</span><span class="ms-label">妆后 after</span></button>
+            </div>
+            <input type="file" id="makeupFile" accept="image/*" hidden>
+          </section>
+
+          <section class="card section-card" id="makeupCompareCard" style="display:none">
+            <div class="section-heading">
+              <div><p class="section-kicker">GROWTH</p><h3>最早 vs 最近</h3></div>
+            </div>
+            <div class="makeup-pad" id="makeupCompare"></div>
+          </section>
+
+          <section class="card section-card">
+            <div class="section-heading">
+              <div><p class="section-kicker">STANDARD LOOK</p><h3>标准妆容卡</h3></div>
+            </div>
+            <form class="std-form" id="makeupTplForm">
+              <div class="field"><label for="mtBase">底妆产品</label><input id="mtBase" type="text" maxlength="60"></div>
+              <div class="field"><label for="mtBrow">眉形</label><input id="mtBrow" type="text" maxlength="60"></div>
+              <div class="field"><label for="mtShadow">眼影颜色</label><input id="mtShadow" type="text" maxlength="60"></div>
+              <div class="field"><label for="mtLiner">眼线方式</label><input id="mtLiner" type="text" maxlength="60"></div>
+              <div class="field"><label for="mtBlush">腮红位置</label><input id="mtBlush" type="text" maxlength="60"></div>
+              <div class="field"><label for="mtLip">唇色</label><input id="mtLip" type="text" maxlength="60"></div>
+              <div class="field"><label for="mtTime">完成时间 分钟</label><input id="mtTime" type="number" min="0" step="1" inputmode="numeric"></div>
+              <div class="field"><label>效果评分</label><div class="star-row" id="mtStars"></div></div>
+              <button class="primary-button full" type="submit">保存妆容卡</button>
+            </form>
+            <p class="soft-hint">目标：最终形成一个 15 分钟内可完成的标准妆容。</p>
+          </section>
+        </div>
+
+        <div class="btab" id="btab-skincare">
+          <section class="card section-card">
+            <div class="section-heading">
+              <div><p class="section-kicker">MORNING</p><h3>早间护肤 ☀️</h3></div>
+            </div>
+            <div id="skincareAM"></div>
+          </section>
+          <section class="card section-card">
+            <div class="section-heading">
+              <div><p class="section-kicker">EVENING</p><h3>晚间护肤 ☾</h3></div>
+            </div>
+            <div id="skincarePM"></div>
+          </section>
+          <div class="quote-card">
+            <p>产品不需要很多，<br>稳定使用比频繁更换更重要。</p>
+            <span class="quote-flower">✿</span>
           </div>
         </div>
-        <form class="card review-form" id="reviewForm">
-          <div class="field full">
-            <label for="reviewDone">今天完成了什么</label>
-            <textarea id="reviewDone" rows="3" placeholder="记录今天的小小成果…"></textarea>
-          </div>
-          <div class="field full">
-            <label for="reviewUndone">今天没完成什么</label>
-            <textarea id="reviewUndone" rows="3" placeholder="没关系，诚实记录就好。"></textarea>
-          </div>
-          <div class="field full">
-            <label for="reviewProblems">今天的问题</label>
-            <textarea id="reviewProblems" rows="3" placeholder="是什么让事情变得困难？"></textarea>
-          </div>
-          <div class="field full">
-            <label for="reviewImprove">明天要改进什么</label>
-            <textarea id="reviewImprove" rows="3" placeholder="给明天一个清晰的小提示…"></textarea>
-          </div>
-          <fieldset class="mood-field">
-            <legend>今日心情</legend>
-            <div class="moods" id="moodOptions">
-              <label><input type="radio" name="mood" value="很棒"><span>🥰<small>很棒</small></span></label>
-              <label><input type="radio" name="mood" value="开心"><span>😊<small>开心</small></span></label>
-              <label><input type="radio" name="mood" value="平静"><span>😌<small>平静</small></span></label>
-              <label><input type="radio" name="mood" value="疲惫"><span>😮‍💨<small>疲惫</small></span></label>
-              <label><input type="radio" name="mood" value="低落"><span>🥺<small>低落</small></span></label>
+
+        <div class="btab" id="btab-hair">
+          <section class="card section-card">
+            <div class="section-heading">
+              <div><p class="section-kicker">TODAY</p><h3>今日发型记录</h3></div>
             </div>
-          </fieldset>
-          <div class="field full">
-            <label for="reviewNote">今日备注</label>
-            <textarea id="reviewNote" rows="4" placeholder="其他想留下来的话…"></textarea>
+            <div id="hairChecks"></div>
+            <div class="field full hair-style-field">
+              <label for="hairStyle">今日发型</label>
+              <div class="focus-chips" id="hairTplChips"></div>
+              <input id="hairStyle" type="text" maxlength="40" placeholder="也可以自己描述…">
+            </div>
+            <div class="field full">
+              <label>发型效果评分</label>
+              <div class="star-row" id="hairStars"></div>
+            </div>
+          </section>
+        </div>
+      </section>
+
+      <!-- ═══════════ 5. STYLE ═══════════ -->
+      <section class="page" id="stylePage">
+        <div class="page-head">
+          <p class="section-kicker">STYLE</p>
+          <h2>穿搭与风格</h2>
+        </div>
+
+        <section class="card section-card">
+          <div class="section-heading">
+            <div><p class="section-kicker">KEYWORDS</p><h3>我的风格关键词</h3></div>
+            <button class="text-button" id="editKeywords" type="button">编辑</button>
           </div>
-          <button class="primary-button full" type="submit">保存今日复盘</button>
-          <p class="save-hint" id="reviewSaveHint">内容会自动保存在本地并同步到云端</p>
-        </form>
+          <div class="kw-chips" id="styleKeywords"></div>
+        </section>
+
+        <section class="card section-card">
+          <div class="section-heading">
+            <div><p class="section-kicker">MY COLORS</p><h3>我的颜色</h3></div>
+            <button class="text-button" id="editColors" type="button">编辑</button>
+          </div>
+          <div class="color-cards" id="styleColors"></div>
+        </section>
+
+        <section class="card section-card">
+          <div class="section-heading">
+            <div><p class="section-kicker">TODAY'S OUTFIT</p><h3>今日穿搭</h3></div>
+          </div>
+          <form class="std-form" id="outfitForm">
+            <div class="field"><label for="ofTop">上衣</label><input id="ofTop" type="text" maxlength="40"></div>
+            <div class="field"><label for="ofBottom">下装 / 裙</label><input id="ofBottom" type="text" maxlength="40"></div>
+            <div class="field"><label for="ofShoes">鞋</label><input id="ofShoes" type="text" maxlength="40"></div>
+            <div class="field"><label for="ofBag">包</label><input id="ofBag" type="text" maxlength="40"></div>
+            <div class="field"><label for="ofAcc">配饰</label><input id="ofAcc" type="text" maxlength="40"></div>
+            <div class="field"><label for="ofHair">发型</label><input id="ofHair" type="text" maxlength="40"></div>
+            <div class="field full"><label for="ofWhy">今天为什么喜欢 / 不喜欢</label><input id="ofWhy" type="text" maxlength="120"></div>
+            <div class="field full"><label>自我评分</label><div class="star-row" id="ofStars"></div></div>
+            <div class="outfit-photo-row">
+              <button class="photo-upload-btn" id="ofPhotoBtn" type="button">＋ 穿搭照</button>
+              <div id="ofPhotoPreview"></div>
+            </div>
+            <button class="primary-button full" type="submit">保存今日穿搭</button>
+          </form>
+          <input type="file" id="outfitFile" accept="image/*" hidden>
+        </section>
+
+        <section class="card section-card">
+          <div class="section-heading">
+            <div><p class="section-kicker">STANDARD OUTFITS</p><h3>我的标准搭配</h3></div>
+          </div>
+          <div id="outfitTplList"></div>
+          <form class="inline-form" id="outfitTplForm">
+            <input id="outfitTplInput" type="text" maxlength="60" placeholder="例如：黑色吊带连衣裙 + 平底鞋" required>
+            <button type="submit">收藏</button>
+          </form>
+        </section>
+
+        <section class="card section-card">
+          <div class="section-heading">
+            <div><p class="section-kicker">WARDROBE</p><h3>衣橱记录</h3></div>
+            <span class="count-badge" id="wardrobeBadge">0 件</span>
+          </div>
+          <div class="filter-chips" id="wardrobeFilter"></div>
+          <div class="wardrobe-grid" id="wardrobeGrid"></div>
+          <form class="std-form wardrobe-form" id="wardrobeForm">
+            <div class="field"><label for="wName">名称</label><input id="wName" type="text" maxlength="40" required></div>
+            <div class="field"><label for="wCat">分类</label>
+              <select id="wCat">
+                <option>连衣裙</option><option>上衣</option><option>半身裙</option><option>外套</option>
+                <option>鞋</option><option>包</option><option>饰品</option>
+              </select>
+            </div>
+            <div class="field"><label for="wColor">颜色</label><input id="wColor" type="text" maxlength="20"></div>
+            <div class="field"><label for="wSeason">季节</label>
+              <select id="wSeason"><option>四季</option><option>春夏</option><option>秋冬</option></select>
+            </div>
+            <button class="primary-button full" type="submit">添加到衣橱</button>
+          </form>
+        </section>
+      </section>
+
+      <!-- ═══════════ 6. REVIEW ═══════════ -->
+      <section class="page" id="reviewPage">
+        <div class="page-head">
+          <p class="section-kicker">REVIEW</p>
+          <h2>周复盘</h2>
+        </div>
+
+        <div class="fin-month-nav card soft-card">
+          <button class="fin-nav-btn" id="weekPrev" type="button">‹</button>
+          <span id="weekLabel"></span>
+          <button class="fin-nav-btn" id="weekNext" type="button">›</button>
+        </div>
+
+        <section class="card section-card">
+          <div class="section-heading">
+            <div><p class="section-kicker">THIS WEEK</p><h3>本周数据</h3></div>
+          </div>
+          <div class="stat-grid" id="weekStats"></div>
+        </section>
+
+        <section class="card section-card">
+          <div class="section-heading">
+            <div><p class="section-kicker">SYSTEM NOTES</p><h3>系统总结</h3></div>
+          </div>
+          <ul class="rv-advice" id="weekSummary"></ul>
+        </section>
+
+        <section class="card section-card">
+          <div class="section-heading">
+            <div><p class="section-kicker">REFLECTION</p><h3>每周复盘问题</h3></div>
+          </div>
+          <form class="review-mini-form week-q-form" id="weekQForm"></form>
+        </section>
+
+        <section class="card section-card">
+          <div class="section-heading">
+            <div><p class="section-kicker">NEXT WEEK</p><h3>下周计划</h3></div>
+          </div>
+          <form class="review-mini-form" id="weekPlanForm">
+            <div class="field full"><label for="wpBody">1 个身体目标</label><input id="wpBody" type="text" maxlength="60" placeholder="例如：步行 5 天"></div>
+            <div class="field full"><label for="wpMakeup">1 个化妆目标</label><input id="wpMakeup" type="text" maxlength="60" placeholder="例如：练习眉毛 3 次"></div>
+            <div class="field full"><label for="wpLife">1 个生活目标</label><input id="wpLife" type="text" maxlength="60" placeholder="例如：每天拍一张记录"></div>
+            <button class="primary-button full" type="submit">保存下周计划</button>
+          </form>
+          <p class="soft-hint">少一点目标，更多完成。</p>
+        </section>
 
         <div class="rv-head">
           <p class="section-kicker">LAST 30 DAYS</p>
@@ -228,116 +642,53 @@
         </div>
       </section>
 
-      <section class="page" id="historyPage">
-        <div class="page-title simple-title">
-          <div>
-            <p class="section-kicker">MEMORIES</p>
-            <h2>历史记录</h2>
-          </div>
-        </div>
-        <div class="date-row card soft-card">
-          <label for="historyDate">选择日期</label>
-          <input id="historyDate" type="date">
-        </div>
-        <div id="historyContent"></div>
-      </section>
-
-      <section class="page" id="financePage">
-        <div class="page-title simple-title">
-          <div>
-            <p class="section-kicker">FINANCE</p>
-            <h2>财务汇总</h2>
-          </div>
+      <!-- ═══════════ 7. PROFILE ═══════════ -->
+      <section class="page" id="profilePage">
+        <div class="page-head">
+          <p class="section-kicker">PROFILE</p>
+          <h2>我的目标</h2>
         </div>
 
-        <div class="fin-month-nav card soft-card">
-          <button class="fin-nav-btn" id="finPrev" type="button">‹</button>
-          <span id="finMonthLabel"></span>
-          <button class="fin-nav-btn" id="finNext" type="button">›</button>
-        </div>
-
-        <div class="fin-stats">
-          <article class="summary-card rose">
-            <span>本月支出</span>
-            <strong id="finMonthTotal">¥0.00</strong>
-          </article>
-          <article class="summary-card cream">
-            <span>今日支出</span>
-            <strong id="finTodayTotal">¥0.00</strong>
-          </article>
-          <article class="summary-card lilac">
-            <span>记录笔数</span>
-            <strong id="finMonthCount">0 笔</strong>
-          </article>
-          <article class="summary-card sage-summary">
-            <span>日均支出</span>
-            <strong id="finDailyAvg">¥0.00</strong>
-          </article>
+        <div class="identity-card">
+          <p class="identity-kicker">IDENTITY ✧</p>
+          <p class="identity-text" id="identityText"></p>
+          <button class="text-button light" id="editIdentity" type="button">编辑宣言</button>
         </div>
 
         <section class="card section-card">
           <div class="section-heading">
-            <div><p class="section-kicker">BY CATEGORY</p><h3>分类汇总</h3></div>
+            <div><p class="section-kicker">FINAL GOAL</p><h3>我的最终目标</h3></div>
+            <button class="text-button" id="editGoal" type="button">编辑</button>
           </div>
-          <div style="padding:6px 16px 16px" id="finMethodBreakdown"></div>
+          <p class="goal-text" id="goalText"></p>
         </section>
 
         <section class="card section-card">
           <div class="section-heading">
-            <div><p class="section-kicker">RECORDS</p><h3>本月明细</h3></div>
-            <span class="count-badge" id="finRecordBadge">0 笔</span>
+            <div><p class="section-kicker">PRINCIPLES</p><h3>我的原则</h3></div>
           </div>
-          <div class="empty-state" id="finEmpty">本月暂无支出记录。</div>
-          <div style="padding:0 16px 4px" id="finRecordList"></div>
-        </section>
-      </section>
-
-      <section class="page" id="makeupPage">
-        <div class="page-title simple-title">
-          <div>
-            <p class="section-kicker">MAKEUP</p>
-            <h2>妆容相册</h2>
-          </div>
-        </div>
-        <p class="makeup-hint">每天存一张，看自己一天天的变化 ✿</p>
-
-        <section class="card section-card">
-          <div class="section-heading">
-            <div><p class="section-kicker">TODAY</p><h3 id="makeupDateLabel">今天</h3></div>
-          </div>
-          <div class="makeup-slots">
-            <button class="makeup-slot" id="slotBefore" type="button"><span class="ms-emoji">📷</span><span class="ms-label">素颜 before</span></button>
-            <button class="makeup-slot" id="slotAfter" type="button"><span class="ms-emoji">💄</span><span class="ms-label">妆后 after</span></button>
-          </div>
-          <input type="file" id="makeupFile" accept="image/*" hidden>
-        </section>
-
-        <section class="card section-card" id="makeupCompareCard" style="display:none">
-          <div class="section-heading">
-            <div><p class="section-kicker">PROGRESS</p><h3>最早 vs 最近</h3></div>
-          </div>
-          <div class="makeup-pad" id="makeupCompare"></div>
+          <ol class="principle-list">
+            <li>不追求最快，只持续迭代。</li>
+            <li>不和别人比较，只和过去的自己比较。</li>
+            <li>审美可以通过持续练习形成。</li>
+          </ol>
         </section>
 
         <section class="card section-card">
           <div class="section-heading">
-            <div><p class="section-kicker">ALBUM</p><h3>全部足迹</h3></div>
+            <div><p class="section-kicker">MINIMUM</p><h3>最小行动</h3></div>
+            <button class="text-button" id="editMinActions" type="button">编辑</button>
           </div>
-          <div class="makeup-pad" id="makeupTimeline"></div>
+          <ul class="min-action-list" id="minActionList"></ul>
+          <p class="soft-hint">状态不好时，在今日页打开「低能量模式」，只完成 3 个最小任务也算成功。</p>
         </section>
-      </section>
 
-      <section class="page" id="guidePage">
-        <div class="page-title simple-title">
-          <div>
-            <p class="section-kicker">NEGENTROPY GUIDE</p>
-            <h2>负熵指南</h2>
-          </div>
-        </div>
-        <blockquote class="guide-quote">我不是一下子变优秀，<br>而是每天都在制造负熵。</blockquote>
-
-        <section class="card history-card">
-          <h3>7 个核心方向</h3>
+        <details class="card section-card">
+          <summary class="section-heading summary-heading">
+            <div><p class="section-kicker">NEGENTROPY GUIDE</p><h3>负熵指南</h3></div>
+            <span class="soft-tag">❀</span>
+          </summary>
+          <blockquote class="guide-quote">我不是一下子变优秀，<br>而是每天都在制造负熵。</blockquote>
           <div class="direction-grid">
             <article><b>01 身体负熵</b><p>少甜、规律吃饭、走路 20–40 分钟，固定作息。</p></article>
             <article><b>02 空间负熵</b><p>床铺整理、桌面归位、垃圾当天扔，物品有固定位置。</p></article>
@@ -347,20 +698,6 @@
             <article><b>06 事业负熵</b><p>每天留下一个内容、笔记、工具测试或页面成果。</p></article>
             <article><b>07 情绪负熵</b><p>睡前复盘，不被太多目标拉走注意力，稳定内心。</p></article>
           </div>
-        </section>
-
-        <section class="card history-card">
-          <h3>每日负熵时间表</h3>
-          <div class="schedule-list">
-            <div><span>☀️ 早上</span><p>喝水、整理床铺、护肤、早餐、晨写与核心意图。</p></div>
-            <div><span>🌤 上午 / 中午</span><p>推进一个现实结果，优先做能看见成果的事。</p></div>
-            <div><span>🌿 下午</span><p>走路、审美输入、深度阅读与一个小产出。</p></div>
-            <div><span>🌙 晚上</span><p>洗澡护肤、整理房间、形体训练、复盘并准备明天。</p></div>
-          </div>
-        </section>
-
-        <section class="card history-card">
-          <h3>避免 6 种熵增行为</h3>
           <ul class="avoid-list">
             <li>一醒来就刷手机——先晨写，再看手机</li>
             <li>同时开太多目标——只专注今日一件核心事</li>
@@ -369,17 +706,35 @@
             <li>情绪上头做决定——先睡觉，明天再说</li>
             <li>晚上继续看刺激内容——换成复盘或轻阅读</li>
           </ul>
+        </details>
+
+        <section class="card section-card">
+          <div class="section-heading">
+            <div><p class="section-kicker">DATA</p><h3>数据管理</h3></div>
+          </div>
+          <div class="data-actions">
+            <button class="ghost-button" id="exportData" type="button">⬇ 导出 JSON</button>
+            <button class="ghost-button" id="importData" type="button">⬆ 导入恢复</button>
+            <button class="ghost-button danger" id="clearData" type="button">清空全部数据</button>
+          </div>
+          <input type="file" id="importFile" accept="application/json,.json" hidden>
+          <p class="soft-hint">数据保存在本地并同步到云端 · 导出可作为备份</p>
         </section>
+
+        <p class="footer-note">Project Selene · Moonlight / Growth / Grace ☾</p>
       </section>
+
     </main>
 
     <nav class="bottom-nav" aria-label="主导航">
       <button class="nav-item active" data-page="today" type="button"><span>⌂</span>今日</button>
+      <button class="nav-item" data-page="progress" type="button"><span>✦</span>进步</button>
+      <button class="nav-item" data-page="body" type="button"><span>♡</span>身材</button>
+      <button class="nav-item" data-page="beauty" type="button"><span>✿</span>美妆</button>
+      <button class="nav-item" data-page="style" type="button"><span>❖</span>穿搭</button>
       <button class="nav-item" data-page="review" type="button"><span>✎</span>复盘</button>
-      <button class="nav-item" data-page="history" type="button"><span>◷</span>历史</button>
-      <button class="nav-item" data-page="finance" type="button"><span>💰</span>财务</button>
-      <button class="nav-item" data-page="makeup" type="button"><span>📸</span>妆容</button>
-      <button class="nav-item" data-page="guide" type="button"><span>❀</span>负熵</button>
+      <button class="nav-item" data-page="finance" type="button"><span>¥</span>财务</button>
+      <button class="nav-item" data-page="profile" type="button"><span>☾</span>我的</button>
     </nav>
   </div>
 
@@ -387,11 +742,25 @@
 
   <div class="makeup-lightbox" id="makeupLightbox">
     <span class="ml-close" id="mlClose">×</span>
-    <img id="mlImg" alt="妆容照片">
+    <img id="mlImg" alt="照片">
     <p id="mlDate"></p>
   </div>
 
+  <div class="onboarding" id="onboarding" style="display:none">
+    <div class="ob-card">
+      <p class="ob-moon">☾</p>
+      <h2>Project Selene</h2>
+      <p class="ob-sub">Becoming the woman I want to see in the mirror.<br>成为镜子里的自己也会喜欢的人。</p>
+      <ul class="ob-list">
+        <li><b>每天 8 个小任务</b><br>完成 5 项就算成功，不需要完美。</li>
+        <li><b>温柔地记录变化</b><br>照片、身体数据、妆容练习、穿搭，只和过去的自己比较。</li>
+        <li><b>每周轻复盘</b><br>少一点目标，更多完成。中断了也可以随时重新开始。</li>
+      </ul>
+      <button class="primary-button full" id="obStart" type="button">开始 Day 1 ✧</button>
+    </div>
+  </div>
+
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="app.js?v=20260704-review1"></script>
+  <script src="app.js?v=selene1"></script>
 </body>
 </html>

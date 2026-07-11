@@ -1,92 +1,201 @@
+/* ═══════════ Project Selene · app.js ═══════════
+   Moonlight / Growth / Grace / Softness / Consistency */
+
 const STORAGE_KEY = 'dailyRecords';
+const SETTINGS_KEY = '_settings';
+const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+
+const SUPABASE_URL = 'https://jmfuujyeodhjhgxezqpv.supabase.co';
+const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_zDXnDnWE665dD9kMmSqxOQ_U0Y_V5ib';
+const SUPABASE_TABLE = 'shared_daily_data';
+const SUPABASE_RECORD_ID = 'daily-negentropy';
+const MAKEUP_BUCKET = 'makeup-photos';
+const MAKEUP_NS = 'daily-negentropy';
+
+const $ = (s) => document.querySelector(s);
+const $$ = (s) => [...document.querySelectorAll(s)];
+
+/* ── Selene daily tasks ── */
+const SELENE_TASKS = [
+  { key: 'skincare', title: '早晚护肤', desc: '温和对待今天的皮肤', cat: '护肤', icon: '🧴' },
+  { key: 'sunscreen', title: '白天防晒', desc: '出门前完成面部与颈部防晒', cat: '护肤', icon: '☀️' },
+  { key: 'walk', title: '步行或运动 30 分钟', desc: '轻盈、干净、稳定地动起来', cat: '身材', icon: '🚶‍♀️' },
+  { key: 'protein', title: '蛋白质摄入达标', desc: '保持肌肉，改善比例', cat: '身材', icon: '🥚' },
+  { key: 'makeup', title: '化妆练习 10 分钟', desc: '只练本周重点就好', cat: '化妆', icon: '💄' },
+  { key: 'posture', title: '仪态练习 10 分钟', desc: '靠墙站立、肩颈放松', cat: '仪态', icon: '🌿' },
+  { key: 'photo', title: '拍一张今日照片', desc: '记录今天的自己', cat: '拍照', icon: '📷' },
+  { key: 'review', title: '睡前复盘', desc: '三行也很好', cat: '复盘', icon: '🌙' }
+];
+const LOW_ENERGY_KEYS = ['skincare', 'walk', 'review'];
+const SUCCESS_TARGET = 5;
+const LOW_TARGET = 3;
+
+const CAT_META = {
+  '护肤': '#86987f', '身材': '#d99a93', '化妆': '#c07b73',
+  '仪态': '#7e96ac', '拍照': '#c9a86b', '复盘': '#9d8fb3'
+};
+
+const MOODS = [
+  { v: 'Calm', face: '😌', zh: '平静' },
+  { v: 'Happy', face: '😊', zh: '开心' },
+  { v: 'Tired', face: '😮‍💨', zh: '疲惫' },
+  { v: 'Anxious', face: '😥', zh: '焦虑' },
+  { v: 'Confident', face: '😎', zh: '自信' },
+  { v: 'Low Energy', face: '🥱', zh: '低能量' }
+];
+
+const MAKEUP_STEPS = [
+  { key: 'base', name: '底妆', icon: '🧴' },
+  { key: 'conceal', name: '遮瑕', icon: '🖌' },
+  { key: 'brow', name: '眉毛', icon: '🖊' },
+  { key: 'shadow', name: '眼影', icon: '🎨' },
+  { key: 'liner', name: '眼线', icon: '✒️' },
+  { key: 'lash', name: '睫毛', icon: '👁' },
+  { key: 'blush', name: '腮红', icon: '🌸' },
+  { key: 'lip', name: '唇妆', icon: '💋' }
+];
+
+const POSTURE_EX = [
+  { key: 'wall', name: '靠墙站立 3 分钟', secs: 180, info: '后脑勺、肩胛骨、臀部、小腿、脚跟贴墙，下巴轻收，自然呼吸。' },
+  { key: 'shoulder', name: '放松肩膀', secs: 60, info: '耸肩后彻底放下，重复 10 次；感受肩膀离开耳朵的距离。' },
+  { key: 'chin', name: '下巴轻收', secs: 60, info: '想象头顶有一根线轻轻向上提，下巴微收，颈后拉长。' },
+  { key: 'neck', name: '肩颈拉伸', secs: 90, info: '头部缓慢向左右两侧倾斜，每侧保持 15 秒，不要耸肩。' },
+  { key: 'hipfold', name: '髋部拉伸', secs: 90, info: '弓步压髋或蝴蝶式，打开髋部，保持骨盆稳定。' },
+  { key: 'slowwalk', name: '慢步行走练习', secs: 120, info: '想象头顶延伸，肩膀放松，脚跟到脚尖平稳落地，步幅轻小。' },
+  { key: 'sit', name: '坐姿练习', secs: 120, info: '坐骨坐稳，背部自然直立不僵硬，双肩下沉，双脚踩实地面。' }
+];
+
+const SKINCARE_AM = [
+  { key: 'cleanse', name: '洁面' },
+  { key: 'moist', name: '保湿' },
+  { key: 'spf', name: '防晒' }
+];
+const SKINCARE_PM = [
+  { key: 'cleanse', name: '洁面' },
+  { key: 'serum', name: '精华' },
+  { key: 'cream', name: '面霜' }
+];
+
+const HAIR_CHECKS = [
+  { key: 'wash', name: '洗发' },
+  { key: 'mask', name: '护发 / 发膜' },
+  { key: 'ends', name: '发尾护理' },
+  { key: 'blow', name: '认真吹发' }
+];
+const HAIR_TPLS = ['直发', '自然卷', '空气刘海', '八字刘海', '半扎发', '低马尾'];
+
+const WARDROBE_CATS = ['连衣裙', '上衣', '半身裙', '外套', '鞋', '包', '饰品'];
 
 const PAY_CATS = [
   { id: '餐饮', icon: '🍜' }, { id: '购物', icon: '🛍' }, { id: '交通', icon: '🚌' },
   { id: '娱乐', icon: '🎬' }, { id: '生活', icon: '🏠' }, { id: '学习', icon: '📚' },
   { id: '健康', icon: '💊' }, { id: '其他', icon: '💸' }
 ];
-let selectedPayCat = '餐饮';
 
-function catIcon(cat) {
-  return PAY_CATS.find((c) => c.id === cat)?.icon || '💸';
-}
+const WEEK_QUESTIONS = [
+  ['q1', '我这周最满意的变化是什么？'],
+  ['q2', '哪个习惯最容易坚持？'],
+  ['q3', '哪个任务设计得太难？'],
+  ['q4', '下周应该减少什么？'],
+  ['q5', '下周最重要的一件事是什么？'],
+  ['q6', '我是不是越来越接近自己喜欢的样子？']
+];
 
-function selectPayCat(el) {
-  document.querySelectorAll('.payment-cat-chip').forEach((c) => c.classList.remove('active'));
-  el.classList.add('active');
-  selectedPayCat = el.dataset.cat;
-}
-const SUPABASE_URL = 'https://jmfuujyeodhjhgxezqpv.supabase.co';
-const SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_zDXnDnWE665dD9kMmSqxOQ_U0Y_V5ib';
-const SUPABASE_TABLE = 'shared_daily_data';
-const SUPABASE_RECORD_ID = 'daily-negentropy';
+const DEFAULT_SETTINGS = () => ({
+  onboarded: false,
+  identity: '我是一个热爱美、持续成长、拥有独立审美的人。\n我不追求完美，我追求今天比昨天更好一点。',
+  goal: '打造自然、精致、轻盈、有个人风格的女性形象。',
+  minActions: ['护肤完成', '步行 10 分钟', '化妆练习 5 分钟', '拍一张照片', '写一句复盘'],
+  styleKeywords: ['Natural', 'Clean', 'Soft', 'Refined', 'Feminine', 'Japanese-inspired'],
+  styleColors: [
+    { name: 'Black', hex: '#2e2b29' }, { name: 'White', hex: '#fdfcfa' },
+    { name: 'Cream', hex: '#f2e7d3' }, { name: 'Light Gray', hex: '#d8d6d2' },
+    { name: 'Denim Blue', hex: '#7d95af' }
+  ],
+  skincareProducts: { am: {}, pm: {} },
+  makeupTemplate: {},
+  makeupFocus: {},
+  bodyGoals: {},
+  weekReviews: {},
+  weekPlans: {},
+  wardrobe: [],
+  outfitTemplates: [
+    { id: 'ot1', text: '黑色吊带连衣裙' }, { id: 'ot2', text: '白色吊带长裙' },
+    { id: 'ot3', text: '米色长裙' }, { id: 'ot4', text: '牛仔外套 + 白色内搭' },
+    { id: 'ot5', text: '日系休闲裙装' }
+  ]
+});
 
-const $ = (selector) => document.querySelector(selector);
-const $$ = (selector) => [...document.querySelectorAll(selector)];
-
-const elements = {
-  recordDate: $('#recordDate'), historyDate: $('#historyDate'), todayLabel: $('#todayLabel'),
-  completionRate: $('#completionRate'), paymentTotal: $('#paymentTotal'), paymentMiniTotal: $('#paymentMiniTotal'), streakDays: $('#streakDays'),
-  taskCount: $('#taskCount'), taskList: $('#taskList'), taskEmpty: $('#taskEmpty'), taskForm: $('#taskForm'), taskInput: $('#taskInput'),
-  paymentForm: $('#paymentForm'), paymentList: $('#paymentList'), paymentEmpty: $('#paymentEmpty'),
-  reviewForm: $('#reviewForm'), reviewDateLabel: $('#reviewDateLabel'), reviewSaveHint: $('#reviewSaveHint'),
-  historyContent: $('#historyContent'), toast: $('#toast'), cloudStatus: $('#cloudStatus')
-};
-
+/* ── State ── */
+let records = {};
 let selectedDate = localDateKey();
-let records;
 let toastTimer;
 let cloudClient;
 let cloudSyncTimer;
 let cloudPullTimer;
+let selectedPayCat = '餐饮';
+let currentPage = 'today';
+let heatRange = '30';
+let photoFilterVal = '全部';
+let wardrobeFilterVal = '全部';
+let weekOffset = 0;
+let finYear = new Date().getFullYear();
+let finMonth = new Date().getMonth();
+let photoUploadType = '全身';
+let makeupKind = 'after';
+let posTimer = null;
+const urlCache = {};
 
-const DAILY_TASK_TEMPLATE = [
-  { key: 'm1', title: '身体激活', desc: '拉伸或散步 10 分钟，冷启动神经系统', category: '认知修炼' },
-  { key: 'm2', title: '晨写', desc: '写下脑中所有浮现，只清空，不评判', category: '认知修炼' },
-  { key: 'm3', title: '设定今日核心意图', desc: '今天只选一件真正要推进的事', category: '认知修炼' },
-  { key: 'm4', title: '手机离开视线', desc: '关闭通知，为深度工作留出空间', category: '认知修炼' },
-  { key: 'm5', title: '完成核心认知做功', desc: '深度写作、复杂问题或现实成果', category: '认知修炼' },
-  { key: 'm6', title: '深度阅读', desc: '纸质书优先，标记真正触动的地方', category: '认知修炼' },
-  { key: 'm7', title: '每天一个小产出', desc: '内容、笔记、工具测试或页面成果', category: '认知修炼' },
-  { key: 'm8', title: '睡前复盘', desc: '完成、混乱、修正，留下三行也很好', category: '认知修炼' },
-  { key: 'b1', title: '温和洁面', desc: '温水与温和洁面产品，不用力拉扯', category: '女性修炼' },
-  { key: 'b2', title: '爽肤补水', desc: '轻拍或按压，照顾好今天的皮肤状态', category: '女性修炼' },
-  { key: 'b3', title: '精华与面霜', desc: '由内向外轻拍，脖颈一并护理', category: '女性修炼' },
-  { key: 'b4', title: '认真防晒', desc: '出门前完成面部与颈部防晒', category: '女性修炼' },
-  { key: 'b5', title: '头发与衣着清爽', desc: '干净、舒展，更像理想中的自己', category: '女性修炼' },
-  { key: 'b6', title: '晚间卸妆洁面', desc: '温柔清洁今天落在皮肤上的疲惫', category: '女性修炼' },
-  { key: 'b7', title: '晚间补水', desc: '根据皮肤状态做简单、稳定的护理', category: '女性修炼' },
-  { key: 'b8', title: '身体乳', desc: '洗澡后及时保湿，把它变成固定仪式', category: '女性修炼' },
-  { key: 'b9', title: '整理明日形象', desc: '提前准备衣服与随身物品', category: '女性修炼' },
-  { key: 'e1', title: '走路 20–40 分钟', desc: '规律步行，保持轻盈、干净、稳定', category: '女性修炼' },
-  { key: 'e2', title: '臀桥 20 次', desc: '激活臀部和身体后侧线条', category: '女性修炼' },
-  { key: 'e3', title: '深蹲 15 次', desc: '腿臀塑形，动作稳定优先', category: '女性修炼' },
-  { key: 'e4', title: '平板支撑 30 秒', desc: '收紧核心，保持自然呼吸', category: '女性修炼' },
-  { key: 'e5', title: '蝴蝶伸展 60 秒', desc: '打开髋部，增加身体柔韧感', category: '女性修炼' },
-  { key: 'e6', title: '整理房间 10 分钟', desc: '空间清爽，人也更容易清醒', category: '女性修炼' }
-];
-
-records = loadRecords();
-
+/* ── Helpers ── */
 function localDateKey(date = new Date()) {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
 }
-
 function nowTime() {
   return new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit', hour12: false });
 }
-
-function uid() {
-  return `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+function uid() { return `${Date.now()}-${Math.random().toString(16).slice(2)}`; }
+function money(v) { return `¥${Number(v || 0).toFixed(2)}`; }
+function escapeHTML(v = '') {
+  return String(v).replace(/[&<>'"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' })[c]);
+}
+function toast(msg) {
+  clearTimeout(toastTimer);
+  $('#toast').textContent = msg;
+  $('#toast').classList.add('show');
+  toastTimer = setTimeout(() => $('#toast').classList.remove('show'), 2000);
+}
+function displayDate(dateKey, withYear = true) {
+  const date = new Date(`${dateKey}T00:00:00`);
+  return new Intl.DateTimeFormat('zh-CN', {
+    ...(withYear ? { year: 'numeric' } : {}), month: 'long', day: 'numeric', weekday: 'short'
+  }).format(date);
+}
+function shiftDate(dateKey, days) {
+  const d = new Date(`${dateKey}T00:00:00`);
+  d.setDate(d.getDate() + days);
+  return localDateKey(d);
+}
+function dateKeys() { return Object.keys(records).filter((k) => DATE_RE.test(k)).sort(); }
+function mondayOf(dateKey) {
+  const d = new Date(`${dateKey}T00:00:00`);
+  const day = (d.getDay() + 6) % 7;
+  d.setDate(d.getDate() - day);
+  return localDateKey(d);
+}
+function weekDays(mondayKey) {
+  return Array.from({ length: 7 }, (_, i) => shiftDate(mondayKey, i));
 }
 
+/* ── Records / settings ── */
 function blankRecord() {
   return {
-    tasks: DAILY_TASK_TEMPLATE.map((task) => ({ ...task, id: task.key, completed: false, completedAt: null })),
-    review: {}, payments: [], makeup: {}
+    tasks: SELENE_TASKS.map((t) => ({ ...t, id: t.key, completed: false, completedAt: null, note: '', skipped: false })),
+    review: {}, payments: [], makeup: {}, photos: [],
+    body: {}, posture: {}, makeupSteps: {}, skincare: { am: {}, pm: {} },
+    hair: { checks: {}, style: '', score: 0 }, outfit: {}, mood: {}, lowEnergy: false
   };
 }
 
@@ -94,57 +203,72 @@ function loadRecords() {
   try {
     const parsed = JSON.parse(localStorage.getItem(STORAGE_KEY));
     if (parsed && typeof parsed === 'object') return parsed;
-
-    const legacy = JSON.parse(localStorage.getItem('negentropy_v3'));
-    if (!legacy || typeof legacy !== 'object') return {};
-    const migrated = {};
-    Object.entries(legacy).forEach(([date, day]) => {
-      migrated[date] = blankRecord();
-      migrated[date].tasks.forEach((task) => {
-        const source = task.category === '女性修炼' ? day.body : day.mind;
-        task.completed = Boolean(source && source[task.key]);
-        task.completedAt = task.completed ? '原打卡记录' : null;
-      });
-    });
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(migrated));
-    return migrated;
-  } catch {
     return {};
-  }
+  } catch { return {}; }
 }
 
 function getRecord(date = selectedDate) {
   if (!records[date]) records[date] = blankRecord();
-  records[date].tasks = Array.isArray(records[date].tasks) ? records[date].tasks : [];
-  records[date].review = records[date].review || {};
-  records[date].payments = Array.isArray(records[date].payments) ? records[date].payments : [];
-  records[date].makeup = records[date].makeup || {};
-  return records[date];
+  const r = records[date];
+  r.tasks = Array.isArray(r.tasks) ? r.tasks : [];
+  r.review = r.review || {};
+  r.payments = Array.isArray(r.payments) ? r.payments : [];
+  r.makeup = r.makeup || {};
+  r.photos = Array.isArray(r.photos) ? r.photos : [];
+  r.body = r.body || {};
+  r.posture = r.posture || {};
+  r.makeupSteps = r.makeupSteps || {};
+  r.skincare = r.skincare || { am: {}, pm: {} };
+  r.skincare.am = r.skincare.am || {};
+  r.skincare.pm = r.skincare.pm || {};
+  r.hair = r.hair || { checks: {}, style: '', score: 0 };
+  r.hair.checks = r.hair.checks || {};
+  r.outfit = r.outfit || {};
+  r.mood = r.mood || {};
+  return r;
+}
+
+function getSettings() {
+  if (!records[SETTINGS_KEY] || typeof records[SETTINGS_KEY] !== 'object') {
+    records[SETTINGS_KEY] = DEFAULT_SETTINGS();
+  }
+  const s = records[SETTINGS_KEY];
+  const def = DEFAULT_SETTINGS();
+  Object.keys(def).forEach((k) => { if (s[k] === undefined) s[k] = def[k]; });
+  return s;
 }
 
 function saveRecords({ touch = true } = {}) {
   if (touch && records[selectedDate]) records[selectedDate].updatedAt = new Date().toISOString();
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(records));
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(records));
+  } catch (e) {
+    console.warn('storage quota:', e);
+    toast('本地存储空间不足，请导出备份后清理旧照片');
+  }
   clearTimeout(cloudSyncTimer);
   cloudSyncTimer = setTimeout(syncCloud, 500);
 }
 
+function saveSettings() {
+  getSettings().updatedAt = new Date().toISOString();
+  saveRecords({ touch: false });
+}
+
+/* ── Cloud sync ── */
 function setCloudStatus(message, state = '') {
-  elements.cloudStatus.textContent = message;
-  elements.cloudStatus.dataset.state = state;
+  $('#cloudStatus').textContent = message;
+  $('#cloudStatus').dataset.state = state;
 }
 
 function mergeRecords(localRecords, cloudRecords) {
   const merged = { ...localRecords };
-  Object.entries(cloudRecords || {}).forEach(([date, cloudDay]) => {
-    const localDay = localRecords[date];
-    if (!localDay) {
-      merged[date] = cloudDay;
-      return;
-    }
+  Object.entries(cloudRecords || {}).forEach(([key, cloudDay]) => {
+    const localDay = localRecords[key];
+    if (!localDay) { merged[key] = cloudDay; return; }
     const localTime = Date.parse(localDay.updatedAt || 0);
     const cloudTime = Date.parse(cloudDay.updatedAt || 0);
-    merged[date] = cloudTime > localTime ? cloudDay : localDay;
+    merged[key] = cloudTime > localTime ? cloudDay : localDay;
   });
   return merged;
 }
@@ -157,7 +281,7 @@ async function syncCloud() {
       .from(SUPABASE_TABLE)
       .upsert({ id: SUPABASE_RECORD_ID, records, updated_at: new Date().toISOString() }, { onConflict: 'id' });
     if (error) throw error;
-    setCloudStatus('已同步到 Supabase', 'ok');
+    setCloudStatus('已同步到云端 ☁', 'ok');
   } catch (error) {
     console.warn('Supabase sync unavailable:', error);
     setCloudStatus('已保存本地 · 云端稍后重试', 'error');
@@ -177,24 +301,20 @@ async function pullCloud() {
   const before = JSON.stringify(records);
   records = mergeRecords(records, cloudRecords);
   if (before === JSON.stringify(records)) return;
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(records));
-  if (!['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement?.tagName)) renderAll();
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(records)); } catch {}
+  if (!['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement?.tagName)) renderPage();
 }
 
 async function initCloud() {
-  if (!window.supabase?.createClient) {
-    setCloudStatus('已保存在本地', 'error');
-    return;
-  }
-
+  if (!window.supabase?.createClient) { setCloudStatus('已保存在本地', 'error'); return; }
   try {
     cloudClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
     await pullCloud();
-    renderAll();
+    renderPage();
     await syncCloud();
     clearInterval(cloudPullTimer);
     cloudPullTimer = setInterval(() => {
-      if (document.visibilityState === 'visible') pullCloud().catch((error) => console.warn('Supabase pull unavailable:', error));
+      if (document.visibilityState === 'visible') pullCloud().catch((e) => console.warn('Supabase pull unavailable:', e));
     }, 15000);
   } catch (error) {
     console.warn('Supabase sync unavailable:', error);
@@ -202,365 +322,779 @@ async function initCloud() {
   }
 }
 
-function displayDate(dateKey, withYear = true) {
-  const date = new Date(`${dateKey}T00:00:00`);
-  return new Intl.DateTimeFormat('zh-CN', {
-    ...(withYear ? { year: 'numeric' } : {}), month: 'long', day: 'numeric', weekday: 'short'
-  }).format(date);
-}
-
-function money(value) {
-  return `¥${Number(value || 0).toFixed(2)}`;
-}
-
-function escapeHTML(value = '') {
-  return String(value).replace(/[&<>'"]/g, (char) => ({
-    '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;'
-  })[char]);
-}
-
-function toast(message) {
-  clearTimeout(toastTimer);
-  elements.toast.textContent = message;
-  elements.toast.classList.add('show');
-  toastTimer = setTimeout(() => elements.toast.classList.remove('show'), 1800);
-}
-
-function setSelectedDate(date) {
-  selectedDate = date || localDateKey();
-  elements.recordDate.value = selectedDate;
-  elements.historyDate.value = selectedDate;
-  renderAll();
-}
-
-function renderAll() {
-  elements.todayLabel.textContent = displayDate(selectedDate);
-  elements.reviewDateLabel.textContent = displayDate(selectedDate).toUpperCase();
-  renderTasks();
-  renderPayments();
-  fillReview();
-  renderHistory();
-}
-
-const TASK_GROUP_META = {
-  '认知修炼': { icon: '🧠', color: 'group-mind' },
-  '女性修炼': { icon: '🌸', color: 'group-body' },
-  '自定义':   { icon: '✦',  color: 'group-custom' },
-};
-
-function taskItemHTML(task) {
-  return `
-    <li class="task-item ${task.completed ? 'done' : ''}" data-id="${task.id}">
-      <input class="task-check" type="checkbox" ${task.completed ? 'checked' : ''} aria-label="标记任务完成">
-      <div style="flex:1;min-width:0">
-        <span class="task-title">${escapeHTML(task.title)}</span>
-        ${task.desc ? `<span class="task-desc">${escapeHTML(task.desc)}</span>` : ''}
-        ${task.completedAt ? `<span class="task-time">完成于 ${escapeHTML(task.completedAt)}</span>` : ''}
-      </div>
-      <button class="delete-button" type="button" aria-label="删除任务">×</button>
-    </li>`;
-}
-
-function renderTasks() {
-  const tasks = getRecord().tasks;
-  const completed = tasks.filter((t) => t.completed).length;
-  const rate = tasks.length ? Math.round(completed / tasks.length * 100) : 0;
-  elements.completionRate.textContent = `${rate}%`;
-  elements.streakDays.textContent = `${calculateStreak()} 天`;
-  elements.taskCount.textContent = `${completed} / ${tasks.length}`;
-
-  // group by category
-  const groups = {};
-  tasks.forEach((t) => {
-    const cat = t.category || '自定义';
-    if (!groups[cat]) groups[cat] = [];
-    groups[cat].push(t);
+/* ── Photo storage ── */
+function compressImage(file, maxSize = 1080, quality = 0.82) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    const img = new Image();
+    reader.onload = () => { img.src = reader.result; };
+    reader.onerror = reject;
+    img.onload = () => {
+      let { width, height } = img;
+      if (width >= height && width > maxSize) { height = Math.round(height * maxSize / width); width = maxSize; }
+      else if (height > width && height > maxSize) { width = Math.round(width * maxSize / height); height = maxSize; }
+      const canvas = document.createElement('canvas');
+      canvas.width = width; canvas.height = height;
+      canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+      canvas.toBlob((blob) => (blob ? resolve(blob) : reject(new Error('compress failed'))), 'image/jpeg', quality);
+    };
+    img.onerror = reject;
+    reader.readAsDataURL(file);
   });
+}
 
-  const ORDER = ['认知修炼', '女性修炼', '自定义'];
-  const cats = [...ORDER.filter((c) => groups[c]), ...Object.keys(groups).filter((c) => !ORDER.includes(c))];
-
-  let html = '';
-  cats.forEach((cat) => {
-    const meta = TASK_GROUP_META[cat] || { icon: '●', color: 'group-custom' };
-    const list = groups[cat];
-    const done = list.filter((t) => t.completed).length;
-    html += `
-      <div class="task-group">
-        <div class="task-group-header ${meta.color}">
-          <span class="task-group-icon">${meta.icon}</span>
-          <span class="task-group-name">${escapeHTML(cat)}</span>
-          <span class="task-group-count">${done}/${list.length}</span>
-        </div>
-        <ul class="task-list">${list.map(taskItemHTML).join('')}</ul>
-      </div>`;
+function blobToDataURL(blob) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = reject;
+    reader.readAsDataURL(blob);
   });
+}
 
-  $('#taskList').innerHTML = html || '<div class="empty-state">今天还没有任务，慢慢开始也很好。</div>';
-
-  // show yesterday's improve note
-  const yesterday = new Date(); yesterday.setDate(yesterday.getDate() - 1);
-  const yKey = localDateKey(yesterday);
-  const improve = records[yKey]?.review?.improve?.trim();
-  const banner = $('#yesterdayImprove');
-  if (improve) {
-    $('#yesterdayImproveText').textContent = improve;
-    banner.style.display = 'block';
-  } else {
-    banner.style.display = 'none';
+async function storePhoto(file, tag) {
+  const blob = await compressImage(file, cloudClient ? 1080 : 640, cloudClient ? 0.82 : 0.7);
+  if (cloudClient) {
+    const path = `${MAKEUP_NS}/${selectedDate}-${tag}-${Date.now()}.jpg`;
+    const { error } = await cloudClient.storage.from(MAKEUP_BUCKET).upload(path, blob, { contentType: 'image/jpeg', upsert: false });
+    if (!error) return path;
+    console.warn('cloud upload failed, fallback to local:', error);
   }
+  return blobToDataURL(blob);
 }
 
-function calculateStreak() {
+async function resolvePhoto(src) {
+  if (!src) return null;
+  if (src.startsWith('data:')) return src;
+  if (urlCache[src]) return urlCache[src];
+  if (!cloudClient) return null;
+  const { data, error } = await cloudClient.storage.from(MAKEUP_BUCKET).createSignedUrl(src, 3600);
+  if (error) { console.warn('signed url:', error); return null; }
+  urlCache[src] = data.signedUrl;
+  return data.signedUrl;
+}
+
+/* ── Day metrics ── */
+function activeTasks(day, dateKey) {
+  const tasks = Array.isArray(day?.tasks) ? day.tasks : [];
+  if (day?.lowEnergy) return tasks.filter((t) => LOW_ENERGY_KEYS.includes(t.key || t.id));
+  return tasks;
+}
+function doneCountOf(day) {
+  const tasks = Array.isArray(day?.tasks) ? day.tasks : [];
+  return tasks.filter((t) => t.completed).length;
+}
+function targetOf(day) {
+  if (day?.lowEnergy) return LOW_TARGET;
+  return SUCCESS_TARGET;
+}
+function isSuccess(day) {
+  if (!day) return false;
+  return doneCountOf(day) >= targetOf(day);
+}
+function heatLevel(count) {
+  if (count >= 7) return 3;
+  if (count >= 5) return 2;
+  if (count >= 3) return 1;
+  return 0;
+}
+function calcStreak() {
   let streak = 0;
-  const cursor = new Date(`${localDateKey()}T00:00:00`);
-  while (true) {
-    const key = localDateKey(cursor);
-    const day = records[key];
-    if (!day || !Array.isArray(day.tasks) || !day.tasks.some((task) => task.completed)) break;
-    streak += 1;
-    cursor.setDate(cursor.getDate() - 1);
-  }
+  let cursor = localDateKey();
+  if (!isSuccess(records[cursor])) cursor = shiftDate(cursor, -1);
+  while (isSuccess(records[cursor])) { streak += 1; cursor = shiftDate(cursor, -1); }
   return streak;
+}
+function longestStreak() {
+  const keys = dateKeys();
+  let best = 0, cur = 0, prev = null;
+  keys.forEach((k) => {
+    if (isSuccess(records[k])) {
+      cur = (prev && shiftDate(prev, 1) === k) ? cur + 1 : 1;
+      best = Math.max(best, cur);
+      prev = k;
+    }
+  });
+  return best;
+}
+function dayNumber() {
+  const keys = dateKeys();
+  const first = keys[0] || localDateKey();
+  const diff = Math.round((new Date(`${localDateKey()}T00:00:00`) - new Date(`${first}T00:00:00`)) / 86400000);
+  return Math.max(1, diff + 1);
+}
+
+/* ── Navigation ── */
+function switchPage(page) {
+  currentPage = page;
+  $$('.page').forEach((s) => s.classList.toggle('active', s.id === `${page}Page`));
+  $$('.nav-item').forEach((b) => b.classList.toggle('active', b.dataset.page === page));
+  renderPage();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function renderPage() {
+  if (currentPage === 'today') renderToday();
+  if (currentPage === 'progress') renderProgress();
+  if (currentPage === 'body') renderBody();
+  if (currentPage === 'beauty') renderBeauty();
+  if (currentPage === 'style') renderStyle();
+  if (currentPage === 'review') renderReviewPage();
+  if (currentPage === 'finance') renderFinancePage();
+  if (currentPage === 'profile') renderProfile();
+}
+
+/* ═══════════ 1. TODAY ═══════════ */
+function greetingParts() {
+  const h = new Date().getHours();
+  const en = h < 12 ? 'Good morning, Selene.' : h < 18 ? 'Good afternoon, Selene.' : 'Good evening, Selene.';
+  const keys = dateKeys().filter((k) => k < localDateKey());
+  const broke = keys.length > 0 && !isSuccess(records[shiftDate(localDateKey(), -1)]) && calcStreak() === 0;
+  const zh = broke ? '今天可以重新开始，不需要补回昨天。' : '今天不需要完美，只需要完成最小行动。';
+  return { en, zh };
+}
+
+function statusText(done, target, total) {
+  if (done === 0) return { text: '今天还没有开始。先完成一个最小行动。', neutral: true };
+  if (done < target) return { text: '你已经开始了。不需要一次做完。', neutral: true };
+  if (done < total) return { text: 'Today counts. 今天已经算成功 ✧', neutral: false };
+  return { text: 'A gentle, complete day. 今天完成得很好 ❀', neutral: false };
+}
+
+function weekRateInfo() {
+  const monday = mondayOf(localDateKey());
+  const today = localDateKey();
+  const days = weekDays(monday).filter((k) => k <= today);
+  const ok = days.filter((k) => isSuccess(records[k])).length;
+  return { ok, total: days.length, rate: days.length ? Math.round(ok / days.length * 100) : 0 };
+}
+
+function renderToday() {
+  const day = getRecord();
+  const isToday = selectedDate === localDateKey();
+
+  $('#todayLabel').textContent = displayDate(selectedDate);
+  $('#dayNumber').textContent = `PROJECT SELENE · DAY ${dayNumber()}`;
+  $('#recordDate').value = selectedDate;
+
+  $('#streakDays').textContent = calcStreak();
+  const wr = weekRateInfo();
+  $('#weekRate').textContent = `${wr.rate}%`;
+  $('#weekRateSub').textContent = `${wr.ok} / ${wr.total} 天`;
+  $('#totalDays').textContent = dateKeys().length;
+
+  const g = greetingParts();
+  $('#greetingEn').textContent = g.en;
+  $('#greetingZh').textContent = g.zh;
+
+  // yesterday's tomorrow-action
+  const y = records[shiftDate(selectedDate, -1)];
+  const act = (y?.review?.tomorrow || y?.review?.improve || '').trim();
+  $('#tomorrowBanner').style.display = act && isToday ? '' : 'none';
+  $('#tomorrowBannerText').textContent = act;
+
+  // progress
+  const tasks = activeTasks(day);
+  const visible = tasks.filter((t) => !t.skipped);
+  const done = tasks.filter((t) => t.completed).length;
+  const target = targetOf(day);
+  $('#doneCount').textContent = done;
+  $('#targetCount').textContent = visible.length;
+  $('#taskCount').textContent = `${done} / ${visible.length}`;
+  $('#thresholdHint').textContent = target;
+  $('#progressFill').style.width = `${visible.length ? Math.min(100, Math.round(done / visible.length * 100)) : 0}%`;
+  const st = statusText(done, target, visible.length);
+  $('#progressStatus').textContent = st.text;
+  $('#progressStatus').classList.toggle('neutral', st.neutral);
+  $('#lowEnergyBtn').classList.toggle('on', !!day.lowEnergy);
+  $('#lowEnergyBtn').textContent = day.lowEnergy ? '☾ 低能量模式 · 开' : '☾ 低能量模式';
+
+  // task list
+  $('#taskList').innerHTML = tasks.map((t) => `
+    <div class="task-item ${t.completed ? 'done' : ''} ${t.skipped ? 'skipped' : ''}" data-id="${escapeHTML(t.id)}">
+      <input class="task-check" type="checkbox" ${t.completed ? 'checked' : ''} ${t.skipped ? 'disabled' : ''} aria-label="完成">
+      <div class="task-main">
+        <span class="task-title">${t.icon ? `<span class="task-icon">${t.icon}</span>` : ''}${escapeHTML(t.title)}</span>
+        ${t.desc ? `<span class="task-desc">${escapeHTML(t.desc)}</span>` : ''}
+        ${t.completedAt ? `<span class="task-time">完成于 ${escapeHTML(t.completedAt)}</span>` : ''}
+        ${t.note ? `<span class="task-note-text">✎ ${escapeHTML(t.note)}</span>` : ''}
+        ${t.skipped ? `<span class="task-note-text">今日跳过</span>` : ''}
+      </div>
+      <div class="task-actions">
+        <button class="task-act" data-act="note" type="button" aria-label="备注">✎</button>
+        <button class="task-act" data-act="skip" type="button" aria-label="跳过">⊘</button>
+        ${t.cat === '自定义' || t.category === '自定义' ? `<button class="task-act" data-act="del" type="button" aria-label="删除">×</button>` : ''}
+      </div>
+    </div>`).join('') || '<div class="empty-state">今天还没有任务。</div>';
+
+  // mood
+  $('#moodChips').innerHTML = MOODS.map((m) => `
+    <button class="mood-chip ${day.mood.v === m.v ? 'active' : ''}" data-mood="${m.v}" type="button">
+      <span class="mc-face">${m.face}</span><span class="mc-name">${m.v}</span>
+    </button>`).join('');
+  if (document.activeElement !== $('#moodNote')) $('#moodNote').value = day.mood.note || '';
+
+  renderTodayPhotos();
+
+  // mini review
+  if (document.activeElement?.form !== $('#miniReviewForm')) {
+    $('#rvBest').value = day.review.best || day.review.done || '';
+    $('#rvImproveToday').value = day.review.improveToday || '';
+    $('#rvTomorrow').value = day.review.tomorrow || day.review.improve || '';
+  }
+}
+
+async function renderTodayPhotos() {
+  const day = getRecord();
+  const grid = $('#todayPhotoGrid');
+  if (!day.photos.length) { grid.innerHTML = ''; return; }
+  const items = await Promise.all(day.photos.map(async (p) => {
+    const url = await resolvePhoto(p.src);
+    if (!url) return '';
+    return `
+      <div class="photo-item" data-id="${escapeHTML(p.id)}">
+        <img src="${url}" alt="" data-view="1">
+        <span class="photo-type-tag">${escapeHTML(p.type)}</span>
+        <button class="photo-del" data-pact="del" type="button">×</button>
+        <button class="photo-del" data-pact="note" type="button" style="top:30px">✎</button>
+        ${p.note ? `<span class="photo-note-tag">${escapeHTML(p.note)}</span>` : ''}
+      </div>`;
+  }));
+  grid.innerHTML = items.join('');
 }
 
 function renderPayments() {
   const payments = getRecord().payments;
-  const total = payments.reduce((sum, item) => sum + Number(item.amount || 0), 0);
-  elements.paymentTotal.textContent = money(total);
-  elements.paymentMiniTotal.textContent = money(total);
-  elements.paymentEmpty.hidden = payments.length > 0;
-  elements.paymentList.innerHTML = payments.map((payment) => `
-    <div class="payment-row" data-id="${payment.id}">
-      <div class="pay-cat-icon">${catIcon(payment.category)}</div>
+  const total = payments.reduce((s, p) => s + Number(p.amount || 0), 0);
+  $('#paymentMiniTotal').textContent = money(total);
+  $('#paymentEmpty').hidden = payments.length > 0;
+  $('#payCatChips').innerHTML = PAY_CATS.map((c) => `
+    <div class="payment-cat-chip ${selectedPayCat === c.id ? 'active' : ''}" data-cat="${c.id}">${c.icon} ${c.id}</div>`).join('');
+  $('#paymentList').innerHTML = payments.map((p) => `
+    <div class="payment-row" data-id="${p.id}">
+      <div class="pay-cat-icon">${catIcon(p.category)}</div>
       <div style="flex:1;min-width:0">
-        <span class="payment-name">${escapeHTML(payment.item)}</span>
-        <span class="payment-meta">${escapeHTML(payment.time)} · ${escapeHTML(payment.method)}${payment.note ? ` · ${escapeHTML(payment.note)}` : ''}</span>
+        <span class="payment-name">${escapeHTML(p.item)}</span>
+        <span class="payment-meta">${escapeHTML(p.time)} · ${escapeHTML(p.method)}${p.note ? ` · ${escapeHTML(p.note)}` : ''}</span>
       </div>
-      <span class="payment-amount">${money(payment.amount)}</span>
-      <button class="delete-button" type="button" aria-label="删除付款记录">×</button>
-    </div>
-  `).join('');
+      <span class="payment-amount">${money(p.amount)}</span>
+      <button class="delete-button" type="button" aria-label="删除">×</button>
+    </div>`).join('');
 }
 
-function fillReview() {
-  const review = getRecord().review;
-  $('#reviewDone').value = review.done || '';
-  $('#reviewUndone').value = review.undone || '';
-  $('#reviewProblems').value = review.problems || '';
-  $('#reviewImprove').value = review.improve || '';
-  $('#reviewNote').value = review.note || '';
-  $$('input[name="mood"]').forEach((input) => { input.checked = input.value === review.mood; });
+function catIcon(cat) { return PAY_CATS.find((c) => c.id === cat)?.icon || '💸'; }
+
+/* ═══════════ 2. PROGRESS ═══════════ */
+function renderProgress() {
+  renderHeatmap();
+  renderProgressStats();
+  renderCatChart();
+  renderCompareControls();
+  renderPhotoTimeline();
 }
 
-function reviewDataFromForm() {
-  return {
-    done: $('#reviewDone').value.trim(),
-    undone: $('#reviewUndone').value.trim(),
-    problems: $('#reviewProblems').value.trim(),
-    improve: $('#reviewImprove').value.trim(),
-    mood: $('input[name="mood"]:checked')?.value || '',
-    note: $('#reviewNote').value.trim(),
-    updatedAt: new Date().toISOString()
-  };
+function renderHeatmap() {
+  const today = localDateKey();
+  let start;
+  if (heatRange === 'all') {
+    const first = dateKeys()[0] || today;
+    start = first;
+    const span = Math.round((new Date(today) - new Date(first)) / 86400000);
+    if (span > 180) start = shiftDate(today, -180);
+  } else {
+    start = shiftDate(today, -(Number(heatRange) - 1));
+  }
+  start = mondayOf(start);
+
+  let html = '<div class="heat-week-head"><span>一</span><span>二</span><span>三</span><span>四</span><span>五</span><span>六</span><span>日</span></div>';
+  let cursor = start;
+  let lastMonth = '';
+  while (cursor <= today) {
+    const wk = weekDays(cursor);
+    const monthLabel = `${Number(cursor.slice(5, 7))}月`;
+    if (monthLabel !== lastMonth) {
+      html += `<p class="heat-month-label">${cursor.slice(0, 4)}年${monthLabel}</p>`;
+      lastMonth = monthLabel;
+    }
+    html += '<div class="heat-row">' + wk.map((k) => {
+      if (k > today) return '<span class="heat-cell blank"></span>';
+      const c = doneCountOf(records[k]);
+      const lv = heatLevel(c);
+      return `<span class="heat-cell ${lv ? `l${lv}` : ''} ${k === today ? 'today-cell' : ''}" title="${k} · ${c} 项">${Number(k.slice(8, 10))}</span>`;
+    }).join('') + '</div>';
+    cursor = shiftDate(cursor, 7);
+  }
+  $('#heatmap').innerHTML = html;
 }
 
-function switchPage(page) {
-  $$('.page').forEach((section) => section.classList.toggle('active', section.id === `${page}Page`));
-  $$('.nav-item').forEach((button) => button.classList.toggle('active', button.dataset.page === page));
-  if (page === 'history') renderHistory();
-  if (page === 'review') renderReviewSummary();
-  window.scrollTo({ top: 0, behavior: 'smooth' });
+function renderProgressStats() {
+  const keys = dateKeys();
+  const successDays = keys.filter((k) => isSuccess(records[k])).length;
+  const avg = keys.length ? (keys.reduce((s, k) => s + doneCountOf(records[k]), 0) / keys.length).toFixed(1) : '0';
+  const now = new Date();
+  const monthKeys = keys.filter((k) => k.startsWith(`${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`));
+  const monthRate = monthKeys.length ? Math.round(monthKeys.filter((k) => isSuccess(records[k])).length / monthKeys.length * 100) : 0;
+  const stats = [
+    [keys.length, '总记录天数'],
+    [successDays, '成功天数 ≥5项'],
+    [calcStreak(), '当前连续天数'],
+    [longestStreak(), '最长连续天数'],
+    [avg, '平均每日完成数'],
+    [`${monthRate}%`, '本月完成率']
+  ];
+  $('#progressStats').innerHTML = stats.map(([v, l]) => `<div class="stat-box"><strong>${v}</strong><span>${l}</span></div>`).join('');
 }
 
-function renderHistory() {
-  const record = getRecord(elements.historyDate.value || selectedDate);
-  const completedTasks = record.tasks.filter((task) => task.completed);
-  const review = record.review || {};
-  const total = record.payments.reduce((sum, item) => sum + Number(item.amount || 0), 0);
-  const reviewFields = [
-    ['今天完成了什么', review.done], ['今天没完成什么', review.undone],
-    ['今天的问题', review.problems], ['明天要改进什么', review.improve],
-    ['今日心情', review.mood], ['今日备注', review.note]
-  ].filter(([, value]) => value);
+function renderCatChart() {
+  const cats = Object.keys(CAT_META);
+  const days = Array.from({ length: 30 }, (_, i) => shiftDate(localDateKey(), i - 29));
+  const W = 340, H = 150, P = 8;
 
-  elements.historyContent.innerHTML = `
-    <section class="card history-card">
-      <h3>已完成任务 · ${completedTasks.length}</h3>
-      ${completedTasks.length ? `<ul class="history-list">${completedTasks.map((task) => `<li>${escapeHTML(task.title)} <span class="history-muted">${task.completedAt ? `· ${escapeHTML(task.completedAt)}` : ''}</span></li>`).join('')}</ul>` : '<p class="history-muted">这一天没有已完成的任务。</p>'}
-    </section>
-    <section class="card history-card">
-      <h3>当日复盘</h3>
-      ${reviewFields.length ? reviewFields.map(([label, value]) => `<div class="review-entry"><strong>${label}</strong><p>${escapeHTML(value)}</p></div>`).join('') : '<p class="history-muted">这一天还没有写复盘。</p>'}
-    </section>
-    <section class="card history-card">
-      <h3>付款记录 · <span class="history-total">${money(total)}</span></h3>
-      ${record.payments.length ? record.payments.map((payment) => `<div class="payment-row"><div class="pay-cat-icon">${catIcon(payment.category)}</div><div style="flex:1;min-width:0"><span class="payment-name">${escapeHTML(payment.item)}</span><span class="payment-meta">${escapeHTML(payment.time)} · ${escapeHTML(payment.method)}${payment.note ? ` · ${escapeHTML(payment.note)}` : ''}</span></div><span class="payment-amount">${money(payment.amount)}</span></div>`).join('') : '<p class="history-muted">这一天没有付款记录。</p>'}
-    </section>
-  `;
-}
+  $('#catLegend').innerHTML = cats.map((c) => `<span><i style="background:${CAT_META[c]}"></i>${c}</span>`).join('');
 
-elements.taskForm.addEventListener('submit', (event) => {
-  event.preventDefault();
-  const title = elements.taskInput.value.trim();
-  if (!title) return;
-  getRecord().tasks.push({ id: uid(), title, desc: '', category: '自定义', completed: false, completedAt: null, createdAt: new Date().toISOString() });
-  elements.taskInput.value = '';
-  saveRecords();
-  renderTasks();
-});
+  const series = cats.map((cat) => days.map((k) => {
+    const tasks = (records[k]?.tasks || []).filter((t) => t.cat === cat);
+    if (!tasks.length) return null;
+    return tasks.filter((t) => t.completed).length / tasks.length;
+  }));
 
-elements.taskList.addEventListener('change', (event) => {
-  if (!event.target.matches('.task-check')) return;
-  const task = getRecord().tasks.find((item) => item.id === event.target.closest('.task-item').dataset.id);
-  if (!task) return;
-  task.completed = event.target.checked;
-  task.completedAt = task.completed ? nowTime() : null;
-  saveRecords();
-  renderTasks();
-  renderHistory();
-});
+  // smooth with trailing window of 5
+  const smooth = series.map((vals) => vals.map((v, i) => {
+    const win = vals.slice(Math.max(0, i - 4), i + 1).filter((x) => x !== null);
+    if (v === null && !win.length) return null;
+    return win.length ? win.reduce((a, b) => a + b, 0) / win.length : null;
+  }));
 
-elements.taskList.addEventListener('click', (event) => {
-  if (!event.target.matches('.delete-button')) return;
-  const id = event.target.closest('.task-item').dataset.id;
-  getRecord().tasks = getRecord().tasks.filter((item) => item.id !== id);
-  saveRecords();
-  renderTasks();
-  renderHistory();
-});
-
-elements.paymentForm.addEventListener('submit', (event) => {
-  event.preventDefault();
-  getRecord().payments.push({
-    id: uid(), time: $('#paymentTime').value, item: $('#paymentItem').value.trim(),
-    amount: Number($('#paymentAmount').value), method: $('#paymentMethod').value,
-    category: selectedPayCat,
-    note: $('#paymentNote').value.trim(), createdAt: new Date().toISOString()
+  let paths = '';
+  smooth.forEach((vals, si) => {
+    let d = '';
+    vals.forEach((v, i) => {
+      if (v === null) { return; }
+      const x = P + (i / (days.length - 1)) * (W - P * 2);
+      const yy = H - P - v * (H - P * 2);
+      d += d ? ` L ${x.toFixed(1)} ${yy.toFixed(1)}` : `M ${x.toFixed(1)} ${yy.toFixed(1)}`;
+    });
+    if (d) paths += `<path d="${d}" fill="none" stroke="${CAT_META[cats[si]]}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" opacity="0.85"/>`;
   });
-  elements.paymentForm.reset();
-  $('#paymentTime').value = nowTime();
-  selectedPayCat = '餐饮';
-  document.querySelectorAll('.payment-cat-chip').forEach((c) => c.classList.toggle('active', c.dataset.cat === '餐饮'));
-  saveRecords();
-  renderPayments();
-  renderHistory();
-  toast('付款记录已保存 ✓');
-});
 
-elements.paymentList.addEventListener('click', (event) => {
-  if (!event.target.matches('.delete-button')) return;
-  const id = event.target.closest('.payment-row').dataset.id;
-  getRecord().payments = getRecord().payments.filter((item) => item.id !== id);
-  saveRecords();
-  renderPayments();
-  renderHistory();
-});
+  const grid = [0.25, 0.5, 0.75].map((f) => {
+    const yy = H - P - f * (H - P * 2);
+    return `<line x1="${P}" y1="${yy}" x2="${W - P}" y2="${yy}" stroke="#f0e8df" stroke-width="0.7"/>`;
+  }).join('');
 
-elements.reviewForm.addEventListener('submit', (event) => {
-  event.preventDefault();
-  getRecord().review = reviewDataFromForm();
-  saveRecords();
-  elements.reviewSaveHint.textContent = `已保存 · ${nowTime()}`;
-  renderHistory();
-  renderReviewSummary();
-  toast('复盘已保存');
-});
+  $('#catChart').innerHTML = grid + (paths || `<text x="${W / 2}" y="${H / 2}" text-anchor="middle" fill="#b3aaa0" font-size="11">开始使用新任务后，这里会画出你的趋势</text>`);
+}
 
-elements.recordDate.addEventListener('change', () => setSelectedDate(elements.recordDate.value));
-elements.historyDate.addEventListener('change', () => setSelectedDate(elements.historyDate.value));
+function dayPhotoEntries(k) {
+  const day = records[k];
+  if (!day) return [];
+  const out = [];
+  (day.photos || []).forEach((p) => out.push({ src: p.src, type: p.type, note: p.note, date: k }));
+  if (day.makeup?.before) out.push({ src: day.makeup.before, type: '妆容', note: '素颜 before', date: k });
+  if (day.makeup?.after) out.push({ src: day.makeup.after, type: '妆容', note: '妆后 after', date: k });
+  if (day.outfit?.photo) out.push({ src: day.outfit.photo, type: '穿搭', note: '', date: k });
+  return out;
+}
 
-// ── Finance ──
-let finYear = new Date().getFullYear();
-let finMonth = new Date().getMonth();
+function photoDays() {
+  return dateKeys().filter((k) => dayPhotoEntries(k).length > 0);
+}
 
-function renderFinance() {
-  const ml = ['一月','二月','三月','四月','五月','六月','七月','八月','九月','十月','十一月','十二月'];
-  $('#finMonthLabel').textContent = `${finYear}年${ml[finMonth]}`;
+function renderCompareControls() {
+  const days = photoDays();
+  const selA = $('#compareA'), selB = $('#compareB');
+  const opts = days.map((d) => `<option value="${d}">${d}</option>`).join('');
+  const prevA = selA.value, prevB = selB.value;
+  selA.innerHTML = opts; selB.innerHTML = opts;
+  if (days.length) {
+    selA.value = days.includes(prevA) ? prevA : days[0];
+    selB.value = days.includes(prevB) ? prevB : days[days.length - 1];
+  }
+  renderCompareView();
+}
 
-  const todayKey = localDateKey();
-  let monthTotal = 0, todayTotal = 0, count = 0;
-  const catMap = {};
-  const monthRecords = [];
+async function renderCompareView() {
+  const a = $('#compareA').value, b = $('#compareB').value;
+  const view = $('#compareView');
+  if (!a || !b) { view.innerHTML = '<p class="empty-state" style="padding:0 0 12px">上传照片后，可以在这里对比 Day 1 与现在。</p>'; return; }
+  const pa = dayPhotoEntries(a)[0], pb = dayPhotoEntries(b)[0];
+  const [ua, ub] = await Promise.all([resolvePhoto(pa?.src), resolvePhoto(pb?.src)]);
+  view.innerHTML = `<div class="makeup-compare">
+    <figure><img src="${ua || ''}" alt=""><figcaption>${a}</figcaption></figure>
+    <figure><img src="${ub || ''}" alt=""><figcaption>${b}</figcaption></figure>
+  </div>`;
+}
 
-  Object.entries(records).forEach(([date, day]) => {
-    const d = new Date(`${date}T00:00:00`);
-    if (!Array.isArray(day.payments)) return;
-    day.payments.forEach((p) => {
-      const amt = Number(p.amount || 0);
-      if (date === todayKey) todayTotal += amt;
-      if (d.getFullYear() === finYear && d.getMonth() === finMonth) {
-        monthTotal += amt;
-        count++;
-        const cat = p.category || '其他';
-        catMap[cat] = (catMap[cat] || 0) + amt;
-        monthRecords.push({ ...p, date });
-      }
+async function renderPhotoTimeline() {
+  const days = photoDays().slice().reverse();
+  const tl = $('#photoTimeline');
+  const entries = [];
+  days.forEach((k) => {
+    dayPhotoEntries(k).forEach((e) => {
+      if (photoFilterVal === '全部' || e.type === photoFilterVal) entries.push(e);
     });
   });
-
-  const daysInMonth = new Date(finYear, finMonth + 1, 0).getDate();
-  const daysPassed = finYear === new Date().getFullYear() && finMonth === new Date().getMonth()
-    ? new Date().getDate() : daysInMonth;
-  const avg = daysPassed > 0 ? monthTotal / daysPassed : 0;
-
-  $('#finMonthTotal').textContent = money(monthTotal);
-  $('#finTodayTotal').textContent = money(todayTotal);
-  $('#finMonthCount').textContent = `${count} 笔`;
-  $('#finDailyAvg').textContent = money(avg);
-  $('#finRecordBadge').textContent = `${count} 笔`;
-
-  // category breakdown using PAY_CATS order
-  const catSorted = PAY_CATS.map((c) => ({ ...c, amt: catMap[c.id] || 0 })).filter((c) => c.amt > 0).sort((a, b) => b.amt - a.amt);
-  const maxAmt = catSorted[0]?.amt || 1;
-  $('#finMethodBreakdown').innerHTML = catSorted.length
-    ? `<div class="fin-method-row">${catSorted.map(({ id, icon, amt }) => {
-        const pct = monthTotal > 0 ? Math.round(amt / monthTotal * 100) : 0;
-        const w = Math.round(amt / maxAmt * 100);
-        return `<div class="fin-method-item"><div class="fin-method-top"><span class="fin-method-name">${icon} ${escapeHTML(id)}</span><span><span class="fin-method-amt">${money(amt)}</span><span class="fin-method-pct">${pct}%</span></span></div><div class="fin-bar-track"><div class="fin-bar-fill" style="width:${w}%"></div></div></div>`;
-      }).join('')}</div>`
-    : '<p class="history-muted" style="margin:6px 0">本月暂无支出</p>';
-
-  // records list
-  monthRecords.sort((a, b) => b.date.localeCompare(a.date) || b.time?.localeCompare(a.time || '') || 0);
-  $('#finEmpty').hidden = monthRecords.length > 0;
-  $('#finRecordList').innerHTML = monthRecords.map((p) => `
-    <div class="fin-record-row">
-      <div class="fin-cat-icon">${catIcon(p.category)}</div>
-      <div class="fin-record-info">
-        <div class="fin-record-name">${escapeHTML(p.item)}</div>
-        <div class="fin-record-meta">${p.category ? escapeHTML(p.category) + ' · ' : ''}${escapeHTML(p.method || '')}${p.note ? ` · ${escapeHTML(p.note)}` : ''}</div>
-      </div>
-      <div style="text-align:right">
-        <div class="fin-record-amt">${money(p.amount)}</div>
-        <div class="fin-record-date">${p.date} ${p.time || ''}</div>
-      </div>
-    </div>
-  `).join('');
+  if (!entries.length) {
+    tl.innerHTML = '<p class="empty-state" style="grid-column:1/-1;padding:0 0 8px">还没有这类照片，慢慢记录就好 ✿</p>';
+    return;
+  }
+  const items = await Promise.all(entries.slice(0, 60).map(async (e) => {
+    const url = await resolvePhoto(e.src);
+    if (!url) return '';
+    return `<button class="makeup-tl-item" type="button" data-url="${url}" data-date="${e.date}"><img src="${url}" alt="" loading="lazy"><span>${e.date.slice(5)} · ${e.type}</span></button>`;
+  }));
+  tl.innerHTML = items.join('');
 }
 
-$('#finPrev').addEventListener('click', () => {
-  finMonth--; if (finMonth < 0) { finMonth = 11; finYear--; }
-  renderFinance();
-});
-$('#finNext').addEventListener('click', () => {
-  const now = new Date();
-  if (finYear > now.getFullYear() || (finYear === now.getFullYear() && finMonth >= now.getMonth())) return;
-  finMonth++; if (finMonth > 11) { finMonth = 0; finYear++; }
-  renderFinance();
-});
+/* ═══════════ 3. BODY ═══════════ */
+const BODY_FIELDS = [
+  ['weight', 'bWeight'], ['waist', 'bWaist'], ['hip', 'bHip'], ['thigh', 'bThigh'],
+  ['arm', 'bArm'], ['steps', 'bSteps'], ['sleep', 'bSleep'], ['exercise', 'bExercise']
+];
 
-$$('[data-page]').forEach((button) => button.addEventListener('click', () => {
-  if (button.dataset.page === 'finance') renderFinance();
-  if (button.dataset.page === 'makeup') renderMakeup();
-  switchPage(button.dataset.page);
-}));
-$('#openReview').addEventListener('click', () => switchPage('review'));
-$('#jumpToday').addEventListener('click', () => { setSelectedDate(localDateKey()); switchPage('today'); });
+function renderBody() {
+  const day = getRecord();
+  BODY_FIELDS.forEach(([k, id]) => {
+    const el = $(`#${id}`);
+    if (document.activeElement !== el) el.value = day.body[k] ?? '';
+  });
+  renderBodyTrends();
+  renderPosture();
+  renderBodyGoals();
+}
 
-// ── Review summary (最近30天历史总结) ──
+function bodySeries(metric) {
+  return dateKeys().map((k) => {
+    const b = records[k]?.body || {};
+    let v = null;
+    if (metric === 'whr') {
+      if (b.waist && b.hip) v = Number((b.waist / b.hip).toFixed(3));
+    } else if (b[metric] !== undefined && b[metric] !== null && b[metric] !== '') {
+      v = Number(b[metric]);
+    }
+    return v === null || Number.isNaN(v) ? null : { date: k, v };
+  }).filter(Boolean);
+}
+
+function sparkSVG(points, color = '#d99a93') {
+  if (points.length < 2) return '<p class="trend-empty">记录 2 次以上后出现趋势线</p>';
+  const vals = points.map((p) => p.v);
+  const min = Math.min(...vals), max = Math.max(...vals);
+  const span = max - min || 1;
+  const pts = vals.map((v, i) => {
+    const x = (i / (vals.length - 1)) * 100;
+    const yy = 30 - ((v - min) / span) * 24 + 2;
+    return `${x.toFixed(1)},${yy.toFixed(1)}`;
+  }).join(' ');
+  return `<svg viewBox="0 0 100 34" preserveAspectRatio="none">
+    <polyline points="${pts}" fill="none" stroke="${color}" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+  </svg>`;
+}
+
+function renderBodyTrends() {
+  const metrics = [
+    ['weight', '体重趋势', 'kg', '#d99a93'],
+    ['waist', '腰围趋势', 'cm', '#c9a86b'],
+    ['whr', '腰臀比趋势', '', '#7e96ac'],
+    ['steps', '步数趋势', '步', '#86987f']
+  ];
+  $('#bodyTrends').innerHTML = metrics.map(([m, name, unit, color]) => {
+    const pts = bodySeries(m).slice(-45);
+    const last = pts[pts.length - 1];
+    return `<div class="trend-item">
+      <div class="trend-top">
+        <span class="trend-name">${name}</span>
+        <span class="trend-val">${last ? `${last.v}` : '—'} <small>${unit}${last ? ` · ${last.date.slice(5)}` : ''}</small></span>
+      </div>
+      ${sparkSVG(pts, color)}
+    </div>`;
+  }).join('');
+}
+
+function renderPosture() {
+  const day = getRecord();
+  $('#postureList').innerHTML = POSTURE_EX.map((ex) => {
+    const done = !!day.posture[ex.key];
+    return `<div class="pos-item" data-key="${ex.key}">
+      <div class="pos-row">
+        <div class="pos-name" data-pos="info">${escapeHTML(ex.name)}<small>点击查看动作说明</small></div>
+        <button class="pos-timer-btn" data-pos="timer" data-secs="${ex.secs}" type="button">⏱ ${Math.round(ex.secs / 60) || 1} 分</button>
+        <button class="pos-done-btn ${done ? 'done' : ''}" data-pos="done" type="button">${done ? '✓ 已完成' : '打卡'}</button>
+      </div>
+      <p class="pos-info">${escapeHTML(ex.info)}</p>
+    </div>`;
+  }).join('');
+}
+
+function renderBodyGoals() {
+  const s = getSettings();
+  const wk = mondayOf(localDateKey());
+  const goals = s.bodyGoals[wk] || [];
+  $('#bodyGoalList').innerHTML = goals.length ? goals.map((g) => `
+    <div class="goal-item ${g.done ? 'done' : ''}" data-id="${g.id}">
+      <input class="task-check" type="checkbox" ${g.done ? 'checked' : ''}>
+      <span class="goal-text-span">${escapeHTML(g.text)}</span>
+      <button class="delete-button" type="button">×</button>
+    </div>`).join('') : '<div class="empty-state">本周还没有目标 · 设 1–3 个就好</div>';
+}
+
+/* ═══════════ 4. BEAUTY ═══════════ */
+function renderBeauty() {
+  renderMakeupFocus();
+  renderMakeupSteps();
+  renderMakeupAlbum();
+  renderMakeupTpl();
+  renderSkincare();
+  renderHair();
+}
+
+function renderMakeupFocus() {
+  const s = getSettings();
+  const wk = mondayOf(localDateKey());
+  const focus = s.makeupFocus[wk] || '';
+  $('#focusChips').innerHTML = MAKEUP_STEPS.map((st) => `
+    <button class="focus-chip ${focus === st.key ? 'active' : ''}" data-focus="${st.key}" type="button">${st.name}</button>`).join('');
+}
+
+function renderMakeupSteps() {
+  const day = getRecord();
+  const s = getSettings();
+  const focus = s.makeupFocus[mondayOf(localDateKey())] || '';
+  const practiced = MAKEUP_STEPS.filter((st) => day.makeupSteps[st.key]?.done).length;
+  $('#makeupPracticeBadge').textContent = `今日 ${practiced} / ${MAKEUP_STEPS.length}`;
+  $('#makeupSteps').innerHTML = MAKEUP_STEPS.map((st) => {
+    const d = day.makeupSteps[st.key] || {};
+    const skill = d.skill || 0;
+    return `<div class="mk-step ${d.done ? 'done' : ''} ${d.open ? 'open' : ''}" data-step="${st.key}">
+      <div class="mk-step-row" data-mk="toggle">
+        <span class="mk-step-icon">${st.icon}</span>
+        <span class="mk-step-name">${st.name}${focus === st.key ? '<span class="mk-focus-tag">本周重点</span>' : ''}</span>
+        <span class="star-row sm">${[1, 2, 3, 4, 5].map((n) => `<button class="star ${n <= skill ? 'on' : ''}" data-mk="star" data-n="${n}" type="button">★</button>`).join('')}</span>
+        <span class="mk-step-check" data-mk="check">✓</span>
+      </div>
+      <div class="mk-step-detail">
+        <input data-mk="products" placeholder="使用产品" value="${escapeHTML(d.products || '')}" maxlength="80">
+        <input data-mk="problems" placeholder="遇到的问题" value="${escapeHTML(d.problems || '')}" maxlength="120">
+        <input data-mk="next" placeholder="下次改进点" value="${escapeHTML(d.next || '')}" maxlength="120">
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function setMakeupSlot(sel, emoji, label, path) {
+  const slot = $(sel);
+  const url = await resolvePhoto(path);
+  slot.innerHTML = url
+    ? `<img class="ms-photo" src="${url}" alt=""><span class="ms-retake">换一张</span>`
+    : `<span class="ms-emoji">${emoji}</span><span class="ms-label">${label}</span>`;
+}
+
+function makeupAlbumDays() {
+  return dateKeys().filter((d) => records[d]?.makeup && (records[d].makeup.before || records[d].makeup.after));
+}
+
+async function renderMakeupAlbum() {
+  $('#makeupDateLabel').textContent = displayDate(selectedDate, false);
+  const makeup = getRecord().makeup;
+  await setMakeupSlot('#slotBefore', '📷', '素颜 before', makeup.before);
+  await setMakeupSlot('#slotAfter', '💄', '妆后 after', makeup.after);
+
+  const days = makeupAlbumDays();
+  const card = $('#makeupCompareCard');
+  if (days.length >= 2) {
+    const first = days[0], last = days[days.length - 1];
+    const fu = await resolvePhoto(records[first].makeup.after || records[first].makeup.before);
+    const lu = await resolvePhoto(records[last].makeup.after || records[last].makeup.before);
+    $('#makeupCompare').innerHTML = `<div class="makeup-compare">
+      <figure><img src="${fu || ''}" alt=""><figcaption>最早 · ${first}</figcaption></figure>
+      <figure><img src="${lu || ''}" alt=""><figcaption>最近 · ${last}</figcaption></figure>
+    </div>`;
+    card.style.display = '';
+  } else {
+    card.style.display = 'none';
+  }
+}
+
+function renderMakeupTpl() {
+  const t = getSettings().makeupTemplate || {};
+  const map = { mtBase: 'base', mtBrow: 'brow', mtShadow: 'shadow', mtLiner: 'liner', mtBlush: 'blush', mtLip: 'lip', mtTime: 'time' };
+  Object.entries(map).forEach(([id, k]) => {
+    const el = $(`#${id}`);
+    if (document.activeElement !== el) el.value = t[k] ?? '';
+  });
+  renderStars($('#mtStars'), t.score || 0);
+}
+
+function renderStars(container, value) {
+  container.innerHTML = [1, 2, 3, 4, 5].map((n) => `<button class="star ${n <= value ? 'on' : ''}" data-n="${n}" type="button">★</button>`).join('');
+}
+
+function renderSkincare() {
+  const day = getRecord();
+  const s = getSettings();
+  const build = (items, part) => items.map((it) => `
+    <div class="sk-item" data-part="${part}" data-key="${it.key}">
+      <input class="task-check" type="checkbox" ${day.skincare[part][it.key] ? 'checked' : ''}>
+      <span class="sk-name">${it.name}</span>
+      <input class="sk-product" placeholder="使用产品（可选）" maxlength="40" value="${escapeHTML(s.skincareProducts[part]?.[it.key] || '')}">
+    </div>`).join('');
+  $('#skincareAM').innerHTML = build(SKINCARE_AM, 'am');
+  $('#skincarePM').innerHTML = build(SKINCARE_PM, 'pm');
+}
+
+function renderHair() {
+  const day = getRecord();
+  $('#hairChecks').innerHTML = HAIR_CHECKS.map((h) => `
+    <div class="sk-item" data-hair="${h.key}">
+      <input class="task-check" type="checkbox" ${day.hair.checks[h.key] ? 'checked' : ''}>
+      <span class="sk-name">${h.name}</span>
+    </div>`).join('');
+  $('#hairTplChips').innerHTML = HAIR_TPLS.map((t) => `
+    <button class="focus-chip ${day.hair.style === t ? 'active' : ''}" data-hairtpl="${t}" type="button">${t}</button>`).join('');
+  if (document.activeElement !== $('#hairStyle')) $('#hairStyle').value = day.hair.style || '';
+  renderStars($('#hairStars'), day.hair.score || 0);
+}
+
+/* ═══════════ 5. STYLE ═══════════ */
+function renderStyle() {
+  const s = getSettings();
+  $('#styleKeywords').innerHTML = s.styleKeywords.map((k) => `<span class="kw-chip">${escapeHTML(k)}</span>`).join('');
+  $('#styleColors').innerHTML = s.styleColors.map((c) => `
+    <div class="color-card"><div class="color-swatch" style="background:${escapeHTML(c.hex)}"></div><span>${escapeHTML(c.name)}</span></div>`).join('');
+
+  const of = getRecord().outfit;
+  const map = { ofTop: 'top', ofBottom: 'bottom', ofShoes: 'shoes', ofBag: 'bag', ofAcc: 'acc', ofHair: 'hair', ofWhy: 'why' };
+  Object.entries(map).forEach(([id, k]) => {
+    const el = $(`#${id}`);
+    if (document.activeElement !== el) el.value = of[k] || '';
+  });
+  renderStars($('#ofStars'), of.score || 0);
+  renderOutfitPhoto();
+
+  $('#outfitTplList').innerHTML = s.outfitTemplates.length ? s.outfitTemplates.map((t) => `
+    <div class="tpl-row" data-id="${t.id}">
+      <span class="tpl-name">${escapeHTML(t.text)}</span>
+      <button class="tpl-use" type="button">→ 今日穿搭</button>
+      <button class="delete-button" type="button">×</button>
+    </div>`).join('') : '<div class="empty-state">收藏几套固定搭配，选择困难时直接用。</div>';
+
+  renderWardrobe();
+}
+
+async function renderOutfitPhoto() {
+  const of = getRecord().outfit;
+  const box = $('#ofPhotoPreview');
+  if (!of.photo) { box.innerHTML = ''; return; }
+  const url = await resolvePhoto(of.photo);
+  box.innerHTML = url ? `<img src="${url}" alt="">` : '';
+}
+
+function renderWardrobe() {
+  const s = getSettings();
+  const cats = ['全部', ...WARDROBE_CATS];
+  $('#wardrobeFilter').innerHTML = cats.map((c) => `
+    <button class="${wardrobeFilterVal === c ? 'active' : ''}" data-wf="${c}" type="button">${c}</button>`).join('');
+  const items = s.wardrobe.filter((w) => wardrobeFilterVal === '全部' || w.cat === wardrobeFilterVal);
+  $('#wardrobeBadge').textContent = `${s.wardrobe.length} 件`;
+  $('#wardrobeGrid').innerHTML = items.map((w) => `
+    <div class="wardrobe-card" data-id="${w.id}">
+      <b>${escapeHTML(w.name)}</b>
+      <p>${escapeHTML(w.cat)}${w.color ? ` · ${escapeHTML(w.color)}` : ''}${w.season ? ` · ${escapeHTML(w.season)}` : ''}</p>
+      <button class="delete-button" type="button">×</button>
+    </div>`).join('');
+}
+
+/* ═══════════ 6. REVIEW ═══════════ */
+function taskTitleByKey(key) {
+  return SELENE_TASKS.find((t) => t.key === key)?.title || key;
+}
+
+function renderReviewPage() {
+  const monday = shiftDate(mondayOf(localDateKey()), weekOffset * 7);
+  const days = weekDays(monday);
+  const fmt = (k) => `${Number(k.slice(5, 7))}月${Number(k.slice(8, 10))}日`;
+  $('#weekLabel').textContent = `${fmt(days[0])} – ${fmt(days[6])}`;
+  $('#weekNext').disabled = weekOffset >= 0;
+  $('#weekNext').style.opacity = weekOffset >= 0 ? 0.35 : 1;
+
+  // week stats
+  const today = localDateKey();
+  const activeDays = days.filter((k) => k <= today);
+  const successDays = activeDays.filter((k) => isSuccess(records[k])).length;
+  const avgDone = activeDays.length
+    ? (activeDays.reduce((s, k) => s + doneCountOf(records[k]), 0) / activeDays.length).toFixed(1) : '0';
+
+  const keyCount = {};
+  activeDays.forEach((k) => (records[k]?.tasks || []).forEach((t) => {
+    const kk = t.key || t.id;
+    keyCount[kk] = keyCount[kk] || { done: 0, total: 0, title: t.title };
+    keyCount[kk].total += 1;
+    if (t.completed) keyCount[kk].done += 1;
+  }));
+  const ranked = Object.values(keyCount).filter((x) => x.total >= 2);
+  ranked.sort((a, b) => b.done / b.total - a.done / a.total || b.done - a.done);
+  const stable = ranked[0]?.done ? ranked[0] : null;
+  const weakest = ranked.length ? ranked[ranked.length - 1] : null;
+
+  const count = (key) => activeDays.filter((k) => (records[k]?.tasks || []).some((t) => (t.key || t.id) === key && t.completed)).length;
+  const makeupN = count('makeup');
+  const postureN = count('posture');
+  const walkN = count('walk');
+  const photoN = activeDays.reduce((s, k) => s + dayPhotoEntries(k).length, 0);
+
+  const short = (t) => (t || '—').replace(/ .*/, '').slice(0, 6);
+  $('#weekStats').innerHTML = [
+    [`${successDays}/${activeDays.length}`, '完成天数'],
+    [avgDone, '平均完成任务'],
+    [stable ? short(stable.title) : '—', '最稳定习惯'],
+    [weakest && weakest.done / weakest.total < 0.5 ? short(weakest.title) : '—', '最易跳过'],
+    [makeupN, '化妆练习'],
+    [postureN, '仪态练习'],
+    [walkN, '运动次数'],
+    [photoN, '上传照片'],
+    [calcStreak(), '当前连续']
+  ].map(([v, l]) => `<div class="stat-box"><strong>${v}</strong><span>${l}</span></div>`).join('');
+
+  // system summary
+  const lines = [];
+  if (stable) lines.push(`你本周最稳定的习惯是「${stable.title}」，完成了 ${stable.done} 天。`);
+  if (weakest && weakest.done / weakest.total < 0.5) {
+    lines.push(`「${weakest.title}」只完成了 ${weakest.done} 次，建议下周把它缩小成 5 分钟的最小版本。`);
+  }
+  if (successDays >= Math.ceil(activeDays.length / 2)) {
+    lines.push(`你有 ${successDays} 天完成了至少 5 项，说明当前任务强度基本合适。`);
+  } else if (activeDays.length >= 3) {
+    lines.push('本周完成天数偏少，可以先只保证 3 个最小行动，不需要追求全部。');
+  }
+  if (!lines.length) lines.push('本周刚刚开始，先完成一个最小行动就很好。');
+  $('#weekSummary').innerHTML = lines.map((l) => `<li>${l}</li>`).join('');
+
+  // questions
+  const s = getSettings();
+  const ans = s.weekReviews[monday] || {};
+  $('#weekQForm').innerHTML = WEEK_QUESTIONS.map(([k, q]) => `
+    <div class="field full"><label for="wq-${k}">${q}</label><textarea id="wq-${k}" data-wq="${k}" rows="2">${escapeHTML(ans[k] || '')}</textarea></div>
+  `).join('') + '<button class="primary-button full" type="submit">保存本周复盘</button>';
+
+  // next week plan
+  const nextMonday = shiftDate(monday, 7);
+  const plan = s.weekPlans[nextMonday] || {};
+  if (document.activeElement?.form !== $('#weekPlanForm')) {
+    $('#wpBody').value = plan.body || '';
+    $('#wpMakeup').value = plan.makeup || '';
+    $('#wpLife').value = plan.life || '';
+  }
+
+  renderReviewSummary();
+}
+
+/* ── 30-day history summary (ported) ── */
 const RV_WINDOW = 30;
-const RV_MOOD_EMOJI = { '很棒': '🥰', '开心': '😊', '平静': '😌', '疲惫': '😮‍💨', '低落': '🥺' };
+const RV_MOOD_LABEL = {
+  '很棒': '🥰 很棒', '开心': '😊 开心', '平静': '😌 平静', '疲惫': '😮‍💨 疲惫', '低落': '🥺 低落',
+  'Calm': '😌 平静', 'Happy': '😊 开心', 'Tired': '😮‍💨 疲惫',
+  'Anxious': '😥 焦虑', 'Confident': '😎 自信', 'Low Energy': '🥱 低能量'
+};
 const RV_KEYWORDS = [
   ['拖延 / 启动困难', /拖延|磨蹭|不想动|不想做|启动|开始不了|一直没开始/, 'neg'],
   ['刷手机 / 分心', /手机|短视频|分心|走神|刷/, 'neg'],
@@ -593,14 +1127,19 @@ function rvDayKeys(count, endOffset = 0) {
   return keys;
 }
 
-function rvHasReview(key) {
-  const r = records[key]?.review;
-  if (!r) return false;
-  return ['done', 'undone', 'problems', 'improve', 'note', 'mood'].some((f) => String(r[f] || '').trim());
+function rvMood(k) {
+  return records[k]?.mood?.v || records[k]?.review?.mood || '';
 }
 
-function rvCompletion(key) {
-  const tasks = records[key]?.tasks;
+function rvHasReview(k) {
+  const r = records[k]?.review;
+  const hasText = r && ['best', 'improveToday', 'tomorrow', 'done', 'undone', 'problems', 'improve', 'note'].some((f) => String(r[f] || '').trim());
+  return hasText || Boolean(rvMood(k)) || Boolean(String(records[k]?.mood?.note || '').trim());
+}
+
+function rvCompletion(k) {
+  const day = records[k];
+  const tasks = day?.tasks;
   if (!Array.isArray(tasks) || !tasks.length) return 0;
   return Math.round(tasks.filter((t) => t.completed).length / tasks.length * 100);
 }
@@ -611,9 +1150,10 @@ function rvAvgCompletion(keys) {
   return Math.round(active.reduce((s, k) => s + rvCompletion(k), 0) / active.length);
 }
 
-function rvReviewText(key, fields = ['done', 'undone', 'problems', 'improve', 'note']) {
-  const r = records[key]?.review || {};
-  return fields.map((f) => String(r[f] || '')).join(' ');
+function rvReviewText(k, fields = ['best', 'improveToday', 'tomorrow', 'done', 'undone', 'problems', 'improve', 'note']) {
+  const r = records[k]?.review || {};
+  const moodNote = fields.includes('note') ? String(records[k]?.mood?.note || '') : '';
+  return fields.map((f) => String(r[f] || '')).join(' ') + ' ' + moodNote;
 }
 
 function rvReviewStreak() {
@@ -630,13 +1170,13 @@ function rvSparkline(keys) {
   const svg = $('#rvSpark');
   const pts = keys.map((k, i) => {
     const x = keys.length > 1 ? (i / (keys.length - 1)) * 100 : 0;
-    const y = 33 - (rvCompletion(k) / 100) * 28;
-    return [x.toFixed(1), y.toFixed(1)];
+    const yy = 33 - (rvCompletion(k) / 100) * 28;
+    return [x.toFixed(1), yy.toFixed(1)];
   });
   const line = pts.map((p) => p.join(',')).join(' ');
   svg.innerHTML = `
-    <polygon points="0,33 ${line} 100,33" fill="rgba(233,169,167,.25)"></polygon>
-    <polyline points="${line}" fill="none" stroke="var(--rose-dark)" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"></polyline>`;
+    <polygon points="0,33 ${line} 100,33" fill="rgba(238,195,189,.3)"></polygon>
+    <polyline points="${line}" fill="none" stroke="#c07b73" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round"></polyline>`;
 }
 
 function renderReviewSummary() {
@@ -651,7 +1191,6 @@ function renderReviewSummary() {
   $('#rvBody').style.display = empty ? 'none' : '';
   if (empty) return;
 
-  // 趋势 + 平均完成率（较上个 30 天周期）
   rvSparkline(keys);
   const avg = rvAvgCompletion(keys) ?? 0;
   const prevAvg = rvAvgCompletion(rvDayKeys(RV_WINDOW, RV_WINDOW));
@@ -660,41 +1199,36 @@ function renderReviewSummary() {
     avg > prevAvg ? `较上周期 ↑ ${avg - prevAvg}%` :
     avg < prevAvg ? `较上周期 ↓ ${prevAvg - avg}%` : '与上周期持平';
 
-  // 复盘天数 + 连续复盘
   $('#rvDays').textContent = `${reviewDays.length} 天`;
   const streak = rvReviewStreak();
   $('#rvStreak').textContent = streak ? `连续复盘 ${streak} 天` : '';
 
-  // 高频情绪 TOP3
   const moodCount = {};
   reviewDays.forEach((k) => {
-    const m = records[k].review.mood;
+    const m = rvMood(k);
     if (m) moodCount[m] = (moodCount[m] || 0) + 1;
   });
   const topMoods = Object.entries(moodCount).sort((a, b) => b[1] - a[1]).slice(0, 3);
   $('#rvMoods').innerHTML = topMoods.length
-    ? topMoods.map(([m, n]) => `<div class="rv-mood-row"><span>${RV_MOOD_EMOJI[m] || '·'} ${m}</span><b>${n} 次</b></div>`).join('')
+    ? topMoods.map(([m, n]) => `<div class="rv-mood-row"><span>${RV_MOOD_LABEL[m] || m}</span><b>${n} 次</b></div>`).join('')
     : '<div class="rv-mood-row"><span>还没有心情记录</span></div>';
 
-  // 高频关键词（按出现天数）
   const kwCount = RV_KEYWORDS.map(([label, re, tone]) => ({
     label, tone,
     n: reviewDays.filter((k) => re.test(rvReviewText(k))).length
   })).filter((k) => k.n > 0).sort((a, b) => b.n - a.n).slice(0, 10);
   $('#rvKeywords').innerHTML = kwCount.length
     ? kwCount.map((k) => `<span class="rv-kw ${k.tone}">${k.label}<b>${k.n}次</b></span>`).join('')
-    : '<p class="history-muted" style="margin:4px 0">复盘写得多一些，关键词会自己浮现出来。</p>';
+    : '<p class="empty-state" style="padding:0">复盘写得多一些，关键词会自己浮现出来。</p>';
 
-  // 常见卡点时段（只扫「没完成 / 问题」两栏）
   const timeCount = RV_TIME_BUCKETS.map(([label, re, desc]) => ({
     label, desc,
-    n: reviewDays.filter((k) => re.test(rvReviewText(k, ['undone', 'problems']))).length
+    n: reviewDays.filter((k) => re.test(rvReviewText(k, ['undone', 'problems', 'improveToday']))).length
   })).filter((t) => t.n > 0).sort((a, b) => b.n - a.n);
   $('#rvTimeCard').style.display = timeCount.length ? '' : 'none';
   $('#rvTimes').innerHTML = timeCount.map((t) =>
     `<div class="rv-time-row"><span class="rv-time-tag">◷ ${t.label}</span><span class="rv-time-desc">${t.desc}</span><b>${t.n} 次提到</b></div>`).join('');
 
-  // 你的进步（温和的正向规则）
   const progress = [];
   if (streak >= 3) progress.push(`已连续复盘 ${streak} 天，复盘越来越稳定了 ✨`);
   if (prevAvg !== null && avg > prevAvg) progress.push(`平均完成率比上个周期提升了 ${avg - prevAvg}%`);
@@ -704,11 +1238,12 @@ function renderReviewSummary() {
   if (!progress.length) progress.push('已经开始记录自己，这就是最重要的一步 💛');
   $('#rvProgress').innerHTML = progress.slice(0, 4).map((p) => `<li>${p}</li>`).join('');
 
-  // 系统建议（基于共性规律，最多 3 条）
   const advice = [];
   const kwTop = kwCount.map((k) => k.label);
   if (kwTop[0] && kwCount[0].tone === 'neg') advice.push(`「${kwTop[0]}」出现频率较高，建议把最重要的一件事放在起床后先做。`);
-  if ((moodCount['疲惫'] || 0) + (moodCount['低落'] || 0) >= reviewDays.length / 3) advice.push('「疲惫 / 低落」占比不小，晚间安排以恢复和整理为主，别排硬任务。');
+  if ((moodCount['疲惫'] || 0) + (moodCount['低落'] || 0) + (moodCount['Tired'] || 0) + (moodCount['Low Energy'] || 0) >= reviewDays.length / 3) {
+    advice.push('「疲惫 / 低能量」占比不小，晚间安排以恢复和整理为主，别排硬任务。');
+  }
   if (kwTop.includes('刷手机 / 分心')) advice.push('分心多和手机有关，做核心事时试着把手机放到视线之外。');
   advice.push('同时推进的事越少越容易坚持，选 1–2 个核心任务深耕就好。');
   $('#rvAdvice').innerHTML = advice.slice(0, 3).map((a) => `<li>${a}</li>`).join('');
@@ -723,160 +1258,779 @@ async function rvCopyText(text) {
   }
 }
 
-$('#rvAiBtn').addEventListener('click', async () => {
-  const keys = rvDayKeys(RV_WINDOW).filter(rvHasReview);
-  if (!keys.length) { toast('还没有复盘记录可以分析'); return; }
-  const lines = keys.map((k) => {
-    const r = records[k].review;
-    const parts = [`【${k}】完成率${rvCompletion(k)}%`];
-    if (r.mood) parts.push(`心情:${r.mood}`);
-    if (r.done) parts.push(`完成:${r.done}`);
-    if (r.undone) parts.push(`没完成:${r.undone}`);
-    if (r.problems) parts.push(`问题:${r.problems}`);
-    if (r.improve) parts.push(`想改进:${r.improve}`);
-    if (r.note) parts.push(`备注:${r.note}`);
-    return parts.join(' | ');
+/* ═══════════ 7. PROFILE ═══════════ */
+function renderProfile() {
+  const s = getSettings();
+  $('#identityText').textContent = s.identity;
+  $('#goalText').textContent = s.goal;
+  $('#minActionList').innerHTML = s.minActions.map((a) => `<li>${escapeHTML(a)}</li>`).join('');
+}
+
+/* ═══════════ FINANCE ═══════════ */
+function renderFinancePage() {
+  renderPayments();
+  renderFinance();
+}
+
+function renderFinance() {
+  const ml = ['一月', '二月', '三月', '四月', '五月', '六月', '七月', '八月', '九月', '十月', '十一月', '十二月'];
+  $('#finMonthLabel').textContent = `${finYear}年${ml[finMonth]}`;
+
+  const todayKey = localDateKey();
+  let monthTotal = 0, todayTotal = 0, count = 0;
+  const catMap = {};
+  const monthRecords = [];
+
+  dateKeys().forEach((date) => {
+    const day = records[date];
+    const d = new Date(`${date}T00:00:00`);
+    if (!Array.isArray(day.payments)) return;
+    day.payments.forEach((p) => {
+      const amt = Number(p.amount || 0);
+      if (date === todayKey) todayTotal += amt;
+      if (d.getFullYear() === finYear && d.getMonth() === finMonth) {
+        monthTotal += amt;
+        count++;
+        const cat = p.category || '其他';
+        catMap[cat] = (catMap[cat] || 0) + amt;
+        monthRecords.push({ ...p, date });
+      }
+    });
   });
-  const prompt = `以下是我最近 ${keys.length} 天的每日复盘记录。请帮我做深度分析：1) 我最常卡住的重复模式是什么；2) 什么事情我经常能做成、可以依靠；3) 情绪和效率的规律；4) 最值得优先调整的一个点（只要一个）。请温和、具体，不要说教。\n\n${lines.join('\n')}`;
-  const ok = await rvCopyText(prompt);
-  toast(ok ? '已复制 30 天记录 ✓ 粘贴给 AI 即可深度分析' : '复制失败，请重试');
-});
 
-// ── Makeup album ──
-const MAKEUP_BUCKET = 'makeup-photos';
-const MAKEUP_NS = 'daily-negentropy';
-let makeupKind = 'after';
-const makeupUrlCache = {};
+  const daysInMonth = new Date(finYear, finMonth + 1, 0).getDate();
+  const now = new Date();
+  const daysPassed = finYear === now.getFullYear() && finMonth === now.getMonth() ? now.getDate() : daysInMonth;
+  const avg = daysPassed > 0 ? monthTotal / daysPassed : 0;
 
-function getMakeup(date = selectedDate) {
-  const rec = getRecord(date);
-  rec.makeup = rec.makeup || {};
-  return rec.makeup;
+  $('#finRecordBadge').textContent = `${count} 笔`;
+  $('#finStats').innerHTML = [
+    [money(monthTotal), '本月支出'], [money(todayTotal), '今日支出'],
+    [`${count} 笔`, '记录笔数'], [money(avg), '日均支出']
+  ].map(([v, l]) => `<article class="stat-pill"><span>${l}</span><strong>${v}</strong></article>`).join('');
+
+  const catSorted = PAY_CATS.map((c) => ({ ...c, amt: catMap[c.id] || 0 })).filter((c) => c.amt > 0).sort((a, b) => b.amt - a.amt);
+  const maxAmt = catSorted[0]?.amt || 1;
+  $('#finMethodBreakdown').innerHTML = catSorted.length
+    ? catSorted.map(({ id, icon, amt }) => {
+        const pct = monthTotal > 0 ? Math.round(amt / monthTotal * 100) : 0;
+        const w = Math.round(amt / maxAmt * 100);
+        return `<div class="fin-method-item"><div class="fin-method-top"><span class="fin-method-name">${icon} ${escapeHTML(id)}</span><span><span class="fin-method-amt">${money(amt)}</span><span class="fin-method-pct">${pct}%</span></span></div><div class="fin-bar-track"><div class="fin-bar-fill" style="width:${w}%"></div></div></div>`;
+      }).join('')
+    : '';
+
+  monthRecords.sort((a, b) => b.date.localeCompare(a.date) || (b.time || '').localeCompare(a.time || ''));
+  $('#finEmpty').hidden = monthRecords.length > 0;
+  $('#finRecordList').innerHTML = monthRecords.map((p) => `
+    <div class="fin-record-row">
+      <div class="fin-cat-icon">${catIcon(p.category)}</div>
+      <div class="fin-record-info">
+        <div class="fin-record-name">${escapeHTML(p.item)}</div>
+        <div class="fin-record-meta">${p.category ? escapeHTML(p.category) + ' · ' : ''}${escapeHTML(p.method || '')}${p.note ? ` · ${escapeHTML(p.note)}` : ''}</div>
+      </div>
+      <div style="text-align:right">
+        <div class="fin-record-amt">${money(p.amount)}</div>
+        <div class="fin-record-date">${p.date} ${p.time || ''}</div>
+      </div>
+    </div>`).join('');
 }
 
-async function makeupSignedUrl(path) {
-  if (!path || !cloudClient) return null;
-  if (makeupUrlCache[path]) return makeupUrlCache[path];
-  const { data, error } = await cloudClient.storage.from(MAKEUP_BUCKET).createSignedUrl(path, 3600);
-  if (error) { console.warn('makeup signed url:', error); return null; }
-  makeupUrlCache[path] = data.signedUrl;
-  return data.signedUrl;
+/* ═══════════ Data export / import / clear ═══════════ */
+function exportJSON() {
+  const blob = new Blob([JSON.stringify(records, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `selene-backup-${localDateKey()}.json`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+  toast('已导出备份 ✓');
 }
 
-function compressImage(file, maxSize = 1080, quality = 0.82) {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    const img = new Image();
-    reader.onload = () => { img.src = reader.result; };
-    reader.onerror = reject;
-    img.onload = () => {
-      let { width, height } = img;
-      if (width >= height && width > maxSize) { height = Math.round(height * maxSize / width); width = maxSize; }
-      else if (height > width && height > maxSize) { width = Math.round(width * maxSize / height); height = maxSize; }
-      const canvas = document.createElement('canvas');
-      canvas.width = width; canvas.height = height;
-      canvas.getContext('2d').drawImage(img, 0, 0, width, height);
-      canvas.toBlob((blob) => (blob ? resolve(blob) : reject(new Error('compress failed'))), 'image/jpeg', quality);
-    };
-    img.onerror = reject;
-    reader.readAsDataURL(file);
-  });
+function importJSON(file) {
+  const reader = new FileReader();
+  reader.onload = () => {
+    try {
+      const data = JSON.parse(reader.result);
+      if (!data || typeof data !== 'object') throw new Error('bad');
+      if (!confirm('导入会与现有数据合并（同一天以较新的为准），继续吗？')) return;
+      records = mergeRecords(records, data);
+      saveRecords({ touch: false });
+      renderPage();
+      toast('数据已导入 ✓');
+    } catch {
+      toast('文件格式不对，导入失败');
+    }
+  };
+  reader.readAsText(file);
 }
 
-async function uploadMakeup(file) {
-  if (!cloudClient) { toast('云端未连接，稍后再试'); return; }
-  toast('正在上传…');
-  try {
-    const blob = await compressImage(file);
-    const path = `${MAKEUP_NS}/${selectedDate}-${makeupKind}-${Date.now()}.jpg`;
-    const { error } = await cloudClient.storage.from(MAKEUP_BUCKET).upload(path, blob, { contentType: 'image/jpeg', upsert: false });
-    if (error) throw error;
-    getMakeup()[makeupKind] = path;
-    saveRecords();
-    renderMakeup();
-    renderHistory();
-    toast('照片已保存 ✓');
-  } catch (error) {
-    console.warn('makeup upload failed:', error);
-    toast('上传失败，请重试');
-  }
+function clearAll() {
+  if (!confirm('确定要清空全部数据吗？此操作无法撤销。')) return;
+  if (!confirm('再次确认：真的要删除所有记录、照片索引与设置吗？建议先导出备份。')) return;
+  records = {};
+  try { localStorage.removeItem(STORAGE_KEY); } catch {}
+  saveRecords({ touch: false });
+  renderPage();
+  toast('已清空全部数据');
 }
 
-async function setMakeupSlot(selector, emoji, label, path) {
-  const slot = $(selector);
-  if (path) {
-    const url = await makeupSignedUrl(path);
-    slot.innerHTML = url
-      ? `<img class="ms-photo" src="${url}" alt=""><span class="ms-retake">换一张</span>`
-      : `<span class="ms-emoji">${emoji}</span><span class="ms-label">${label}</span>`;
-  } else {
-    slot.innerHTML = `<span class="ms-emoji">${emoji}</span><span class="ms-label">${label}</span>`;
-  }
-}
-
-function makeupDays() {
-  return Object.keys(records)
-    .filter((d) => records[d]?.makeup && (records[d].makeup.before || records[d].makeup.after))
-    .sort();
-}
-
-async function renderMakeup() {
-  $('#makeupDateLabel').textContent = displayDate(selectedDate, false);
-  const makeup = getMakeup();
-  await setMakeupSlot('#slotBefore', '📷', '素颜 before', makeup.before);
-  await setMakeupSlot('#slotAfter', '💄', '妆后 after', makeup.after);
-
-  const days = makeupDays();
-  const compareCard = $('#makeupCompareCard');
-  const compare = $('#makeupCompare');
-  if (days.length >= 2) {
-    const first = days[0];
-    const last = days[days.length - 1];
-    const fu = await makeupSignedUrl(records[first].makeup.after || records[first].makeup.before);
-    const lu = await makeupSignedUrl(records[last].makeup.after || records[last].makeup.before);
-    compare.innerHTML = `<div class="makeup-compare">
-      <figure><img src="${fu}" alt=""><figcaption>最早 · ${first}</figcaption></figure>
-      <figure><img src="${lu}" alt=""><figcaption>最近 · ${last}</figcaption></figure>
-    </div>`;
-    compareCard.style.display = '';
-  } else {
-    compareCard.style.display = 'none';
-  }
-
-  const timeline = $('#makeupTimeline');
-  if (!days.length) {
-    timeline.innerHTML = '<p class="history-muted" style="margin:6px 0">还没有照片，上传今天的妆容开始吧 ✿</p>';
-    return;
-  }
-  const items = await Promise.all(days.slice().reverse().map(async (d) => {
-    const m = records[d].makeup;
-    const url = await makeupSignedUrl(m.after || m.before);
-    return `<button class="makeup-tl-item" type="button" data-url="${url}" data-date="${d}"><img src="${url}" alt=""><span>${d.slice(5)}</span></button>`;
-  }));
-  timeline.innerHTML = items.join('');
-}
-
-$('#slotBefore').addEventListener('click', () => { makeupKind = 'before'; $('#makeupFile').click(); });
-$('#slotAfter').addEventListener('click', () => { makeupKind = 'after'; $('#makeupFile').click(); });
-$('#makeupFile').addEventListener('change', (event) => {
-  const file = event.target.files[0];
-  if (file) uploadMakeup(file);
-  event.target.value = '';
-});
-$('#makeupTimeline').addEventListener('click', (event) => {
-  const item = event.target.closest('.makeup-tl-item');
-  if (!item) return;
-  $('#mlImg').src = item.dataset.url;
-  $('#mlDate').textContent = item.dataset.date;
+/* ═══════════ Lightbox ═══════════ */
+function openLightbox(url, caption) {
+  $('#mlImg').src = url;
+  $('#mlDate').textContent = caption || '';
   $('#makeupLightbox').classList.add('show');
-});
-$('#mlClose').addEventListener('click', () => $('#makeupLightbox').classList.remove('show'));
-$('#makeupLightbox').addEventListener('click', (event) => {
-  if (event.target.id === 'makeupLightbox') $('#makeupLightbox').classList.remove('show');
-});
+}
 
-elements.recordDate.value = selectedDate;
-elements.historyDate.value = selectedDate;
-$('#paymentTime').value = nowTime();
-renderAll();
-initCloud();
+/* ═══════════ Events ═══════════ */
+function bindEvents() {
+  // nav
+  $$('.nav-item').forEach((b) => b.addEventListener('click', () => switchPage(b.dataset.page)));
+  $('#jumpToday').addEventListener('click', () => { selectedDate = localDateKey(); switchPage('today'); });
+  $('#recordDate').addEventListener('change', () => { selectedDate = $('#recordDate').value || localDateKey(); renderPage(); });
+
+  /* ── Today ── */
+  $('#lowEnergyBtn').addEventListener('click', () => {
+    const day = getRecord();
+    day.lowEnergy = !day.lowEnergy;
+    saveRecords();
+    renderToday();
+    toast(day.lowEnergy ? '低能量模式已开启 · 完成 3 个最小任务就算成功' : '已回到完整任务');
+  });
+
+  $('#taskList').addEventListener('change', (e) => {
+    if (!e.target.matches('.task-check')) return;
+    const id = e.target.closest('.task-item').dataset.id;
+    const task = getRecord().tasks.find((t) => t.id === id);
+    if (!task) return;
+    task.completed = e.target.checked;
+    task.completedAt = task.completed ? nowTime() : null;
+    saveRecords();
+    renderToday();
+  });
+
+  $('#taskList').addEventListener('click', (e) => {
+    const btn = e.target.closest('.task-act');
+    if (!btn) return;
+    const id = btn.closest('.task-item').dataset.id;
+    const day = getRecord();
+    const task = day.tasks.find((t) => t.id === id);
+    if (!task) return;
+    if (btn.dataset.act === 'note') {
+      const note = prompt('给这个任务写一句备注：', task.note || '');
+      if (note !== null) { task.note = note.trim(); saveRecords(); renderToday(); }
+    } else if (btn.dataset.act === 'skip') {
+      task.skipped = !task.skipped;
+      if (task.skipped) { task.completed = false; task.completedAt = null; }
+      saveRecords(); renderToday();
+    } else if (btn.dataset.act === 'del') {
+      day.tasks = day.tasks.filter((t) => t.id !== id);
+      saveRecords(); renderToday();
+    }
+  });
+
+  $('#taskForm').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const title = $('#taskInput').value.trim();
+    if (!title) return;
+    getRecord().tasks.push({ id: uid(), title, desc: '', cat: '自定义', icon: '✦', completed: false, completedAt: null, note: '', skipped: false });
+    $('#taskInput').value = '';
+    saveRecords();
+    renderToday();
+  });
+
+  $('#moodChips').addEventListener('click', (e) => {
+    const chip = e.target.closest('.mood-chip');
+    if (!chip) return;
+    const day = getRecord();
+    day.mood.v = day.mood.v === chip.dataset.mood ? '' : chip.dataset.mood;
+    saveRecords();
+    renderToday();
+  });
+  $('#moodNote').addEventListener('change', () => {
+    getRecord().mood.note = $('#moodNote').value.trim();
+    saveRecords();
+  });
+
+  // photos
+  $$('.photo-upload-btn[data-ptype]').forEach((b) => b.addEventListener('click', () => {
+    photoUploadType = b.dataset.ptype;
+    $('#photoFile').click();
+  }));
+  $('#photoFile').addEventListener('change', async (e) => {
+    const file = e.target.files[0];
+    e.target.value = '';
+    if (!file) return;
+    toast('正在保存照片…');
+    try {
+      const src = await storePhoto(file, `p-${photoUploadType}`);
+      getRecord().photos.push({ id: uid(), src, type: photoUploadType, note: '', at: nowTime() });
+      // auto-complete the photo task
+      const pt = getRecord().tasks.find((t) => (t.key || t.id) === 'photo');
+      if (pt && !pt.completed) { pt.completed = true; pt.completedAt = nowTime(); }
+      saveRecords();
+      renderToday();
+      toast('照片已保存 ✓');
+    } catch (err) {
+      console.warn(err);
+      toast('保存失败，请重试');
+    }
+  });
+
+  $('#todayPhotoGrid').addEventListener('click', async (e) => {
+    const item = e.target.closest('.photo-item');
+    if (!item) return;
+    const day = getRecord();
+    const photo = day.photos.find((p) => p.id === item.dataset.id);
+    if (!photo) return;
+    const act = e.target.closest('[data-pact]')?.dataset.pact;
+    if (act === 'del') {
+      if (!confirm('删除这张照片吗？')) return;
+      day.photos = day.photos.filter((p) => p.id !== photo.id);
+      saveRecords(); renderToday();
+    } else if (act === 'note') {
+      const note = prompt('照片备注：', photo.note || '');
+      if (note !== null) { photo.note = note.trim(); saveRecords(); renderToday(); }
+    } else if (e.target.dataset.view) {
+      openLightbox(e.target.src, `${selectedDate} · ${photo.type}${photo.note ? ` · ${photo.note}` : ''}`);
+    }
+  });
+
+  $('#miniReviewForm').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const day = getRecord();
+    day.review = {
+      ...day.review,
+      best: $('#rvBest').value.trim(),
+      improveToday: $('#rvImproveToday').value.trim(),
+      tomorrow: $('#rvTomorrow').value.trim(),
+      updatedAt: new Date().toISOString()
+    };
+    const rt = day.tasks.find((t) => (t.key || t.id) === 'review');
+    if (rt && !rt.completed && (day.review.best || day.review.improveToday || day.review.tomorrow)) {
+      rt.completed = true; rt.completedAt = nowTime();
+    }
+    saveRecords();
+    $('#miniReviewHint').textContent = `已保存 · ${nowTime()}`;
+    renderToday();
+    toast('复盘已保存 ✓');
+  });
+
+  // payments
+  $('#payCatChips').addEventListener('click', (e) => {
+    const chip = e.target.closest('.payment-cat-chip');
+    if (!chip) return;
+    selectedPayCat = chip.dataset.cat;
+    $$('.payment-cat-chip').forEach((c) => c.classList.toggle('active', c.dataset.cat === selectedPayCat));
+  });
+  $('#paymentForm').addEventListener('submit', (e) => {
+    e.preventDefault();
+    getRecord().payments.push({
+      id: uid(), time: $('#paymentTime').value, item: $('#paymentItem').value.trim(),
+      amount: Number($('#paymentAmount').value), method: $('#paymentMethod').value,
+      category: selectedPayCat, note: $('#paymentNote').value.trim(), createdAt: new Date().toISOString()
+    });
+    $('#paymentForm').reset();
+    $('#paymentTime').value = nowTime();
+    selectedPayCat = '餐饮';
+    saveRecords();
+    renderFinancePage();
+    toast('付款记录已保存 ✓');
+  });
+  $('#paymentList').addEventListener('click', (e) => {
+    if (!e.target.matches('.delete-button')) return;
+    const id = e.target.closest('.payment-row').dataset.id;
+    getRecord().payments = getRecord().payments.filter((p) => p.id !== id);
+    saveRecords();
+    renderFinancePage();
+  });
+
+  /* ── Progress ── */
+  $('#heatRangeToggle').addEventListener('click', (e) => {
+    const b = e.target.closest('button');
+    if (!b) return;
+    heatRange = b.dataset.range;
+    $$('#heatRangeToggle button').forEach((x) => x.classList.toggle('active', x === b));
+    renderHeatmap();
+  });
+  $('#photoFilter').addEventListener('click', (e) => {
+    const b = e.target.closest('button');
+    if (!b) return;
+    photoFilterVal = b.dataset.pf;
+    $$('#photoFilter button').forEach((x) => x.classList.toggle('active', x === b));
+    renderPhotoTimeline();
+  });
+  $('#compareA').addEventListener('change', renderCompareView);
+  $('#compareB').addEventListener('change', renderCompareView);
+  $('#photoTimeline').addEventListener('click', (e) => {
+    const item = e.target.closest('.makeup-tl-item');
+    if (item) openLightbox(item.dataset.url, item.dataset.date);
+  });
+
+  /* ── Body ── */
+  $('#bodyForm').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const day = getRecord();
+    BODY_FIELDS.forEach(([k, id]) => {
+      const v = $(`#${id}`).value;
+      if (v === '') delete day.body[k];
+      else day.body[k] = Number(v);
+    });
+    saveRecords();
+    renderBody();
+    toast('身体数据已保存 ✓');
+  });
+
+  $('#postureList').addEventListener('click', (e) => {
+    const item = e.target.closest('.pos-item');
+    if (!item) return;
+    const key = item.dataset.key;
+    const act = e.target.closest('[data-pos]')?.dataset.pos;
+    if (act === 'info') {
+      item.classList.toggle('open');
+    } else if (act === 'done') {
+      const day = getRecord();
+      day.posture[key] = !day.posture[key];
+      saveRecords();
+      renderPosture();
+    } else if (act === 'timer') {
+      const btn = e.target.closest('.pos-timer-btn');
+      if (posTimer) { clearInterval(posTimer.iv); posTimer.btn.textContent = posTimer.orig; posTimer.btn.classList.remove('running'); }
+      if (posTimer?.btn === btn) { posTimer = null; return; }
+      let left = Number(btn.dataset.secs);
+      const orig = btn.textContent;
+      btn.classList.add('running');
+      const tick = () => {
+        btn.textContent = `${Math.floor(left / 60)}:${String(left % 60).padStart(2, '0')}`;
+        if (left <= 0) {
+          clearInterval(iv);
+          btn.classList.remove('running');
+          btn.textContent = orig;
+          posTimer = null;
+          const day = getRecord();
+          day.posture[key] = true;
+          saveRecords();
+          renderPosture();
+          toast('完成一组仪态练习 ❀');
+        }
+        left -= 1;
+      };
+      tick();
+      const iv = setInterval(tick, 1000);
+      posTimer = { iv, btn, orig };
+    }
+  });
+
+  $('#bodyGoalForm').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const s = getSettings();
+    const wk = mondayOf(localDateKey());
+    s.bodyGoals[wk] = s.bodyGoals[wk] || [];
+    if (s.bodyGoals[wk].length >= 3) { toast('每周最多 3 个目标 · 少一点更容易完成'); return; }
+    s.bodyGoals[wk].push({ id: uid(), text: $('#bodyGoalInput').value.trim(), done: false });
+    $('#bodyGoalInput').value = '';
+    saveSettings();
+    renderBodyGoals();
+  });
+  $('#bodyGoalList').addEventListener('change', (e) => {
+    if (!e.target.matches('.task-check')) return;
+    const id = e.target.closest('.goal-item').dataset.id;
+    const s = getSettings();
+    const wk = mondayOf(localDateKey());
+    const g = (s.bodyGoals[wk] || []).find((x) => x.id === id);
+    if (g) { g.done = e.target.checked; saveSettings(); renderBodyGoals(); }
+  });
+  $('#bodyGoalList').addEventListener('click', (e) => {
+    if (!e.target.matches('.delete-button')) return;
+    const id = e.target.closest('.goal-item').dataset.id;
+    const s = getSettings();
+    const wk = mondayOf(localDateKey());
+    s.bodyGoals[wk] = (s.bodyGoals[wk] || []).filter((x) => x.id !== id);
+    saveSettings();
+    renderBodyGoals();
+  });
+
+  /* ── Beauty ── */
+  $('#beautyTabs').addEventListener('click', (e) => {
+    const b = e.target.closest('button');
+    if (!b) return;
+    $$('#beautyTabs button').forEach((x) => x.classList.toggle('active', x === b));
+    $$('.btab').forEach((t) => t.classList.toggle('active', t.id === `btab-${b.dataset.btab}`));
+  });
+
+  $('#focusChips').addEventListener('click', (e) => {
+    const chip = e.target.closest('.focus-chip');
+    if (!chip) return;
+    const s = getSettings();
+    const wk = mondayOf(localDateKey());
+    s.makeupFocus[wk] = s.makeupFocus[wk] === chip.dataset.focus ? '' : chip.dataset.focus;
+    saveSettings();
+    renderMakeupFocus();
+    renderMakeupSteps();
+  });
+
+  $('#makeupSteps').addEventListener('click', (e) => {
+    const stepEl = e.target.closest('.mk-step');
+    if (!stepEl) return;
+    const key = stepEl.dataset.step;
+    const day = getRecord();
+    day.makeupSteps[key] = day.makeupSteps[key] || {};
+    const d = day.makeupSteps[key];
+    const mk = e.target.closest('[data-mk]')?.dataset.mk;
+    if (mk === 'check') {
+      d.done = !d.done;
+      if (d.done) {
+        const mt = day.tasks.find((t) => (t.key || t.id) === 'makeup');
+        if (mt && !mt.completed) { mt.completed = true; mt.completedAt = nowTime(); }
+      }
+      saveRecords();
+      renderMakeupSteps();
+    } else if (mk === 'star') {
+      d.skill = Number(e.target.dataset.n);
+      saveRecords();
+      renderMakeupSteps();
+    } else if (mk === 'toggle') {
+      d.open = !d.open;
+      renderMakeupSteps();
+    }
+  });
+  $('#makeupSteps').addEventListener('change', (e) => {
+    const mk = e.target.dataset.mk;
+    if (!['products', 'problems', 'next'].includes(mk)) return;
+    const key = e.target.closest('.mk-step').dataset.step;
+    const day = getRecord();
+    day.makeupSteps[key] = day.makeupSteps[key] || {};
+    day.makeupSteps[key][mk] = e.target.value.trim();
+    day.makeupSteps[key].open = true;
+    saveRecords();
+  });
+
+  $('#slotBefore').addEventListener('click', () => { makeupKind = 'before'; $('#makeupFile').click(); });
+  $('#slotAfter').addEventListener('click', () => { makeupKind = 'after'; $('#makeupFile').click(); });
+  $('#makeupFile').addEventListener('change', async (e) => {
+    const file = e.target.files[0];
+    e.target.value = '';
+    if (!file) return;
+    toast('正在上传…');
+    try {
+      const src = await storePhoto(file, makeupKind);
+      getRecord().makeup[makeupKind] = src;
+      saveRecords();
+      renderMakeupAlbum();
+      toast('照片已保存 ✓');
+    } catch (err) {
+      console.warn(err);
+      toast('上传失败，请重试');
+    }
+  });
+
+  $('#makeupTplForm').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const s = getSettings();
+    s.makeupTemplate = {
+      ...s.makeupTemplate,
+      base: $('#mtBase').value.trim(), brow: $('#mtBrow').value.trim(),
+      shadow: $('#mtShadow').value.trim(), liner: $('#mtLiner').value.trim(),
+      blush: $('#mtBlush').value.trim(), lip: $('#mtLip').value.trim(),
+      time: $('#mtTime').value
+    };
+    saveSettings();
+    toast('标准妆容卡已保存 ✓');
+  });
+  $('#mtStars').addEventListener('click', (e) => {
+    const star = e.target.closest('.star');
+    if (!star) return;
+    const s = getSettings();
+    s.makeupTemplate = s.makeupTemplate || {};
+    s.makeupTemplate.score = Number(star.dataset.n);
+    saveSettings();
+    renderStars($('#mtStars'), s.makeupTemplate.score);
+  });
+
+  ['#skincareAM', '#skincarePM'].forEach((sel) => {
+    $(sel).addEventListener('change', (e) => {
+      const row = e.target.closest('.sk-item');
+      if (!row) return;
+      const { part, key } = row.dataset;
+      if (e.target.matches('.task-check')) {
+        const day = getRecord();
+        day.skincare[part][key] = e.target.checked;
+        // auto-complete skincare task when a full routine is done
+        const items = part === 'am' ? SKINCARE_AM : SKINCARE_PM;
+        if (items.every((it) => day.skincare[part][it.key])) {
+          const t = day.tasks.find((x) => (x.key || x.id) === 'skincare');
+          if (t && !t.completed) { t.completed = true; t.completedAt = nowTime(); }
+          if (part === 'am' && day.skincare.am.spf) {
+            const sp = day.tasks.find((x) => (x.key || x.id) === 'sunscreen');
+            if (sp && !sp.completed) { sp.completed = true; sp.completedAt = nowTime(); }
+          }
+        }
+        saveRecords();
+      } else if (e.target.matches('.sk-product')) {
+        const s = getSettings();
+        s.skincareProducts[part] = s.skincareProducts[part] || {};
+        s.skincareProducts[part][key] = e.target.value.trim();
+        saveSettings();
+      }
+    });
+  });
+
+  $('#hairChecks').addEventListener('change', (e) => {
+    const row = e.target.closest('.sk-item');
+    if (!row || !e.target.matches('.task-check')) return;
+    getRecord().hair.checks[row.dataset.hair] = e.target.checked;
+    saveRecords();
+  });
+  $('#hairTplChips').addEventListener('click', (e) => {
+    const chip = e.target.closest('.focus-chip');
+    if (!chip) return;
+    const day = getRecord();
+    day.hair.style = day.hair.style === chip.dataset.hairtpl ? '' : chip.dataset.hairtpl;
+    saveRecords();
+    renderHair();
+  });
+  $('#hairStyle').addEventListener('change', () => {
+    getRecord().hair.style = $('#hairStyle').value.trim();
+    saveRecords();
+    renderHair();
+  });
+  $('#hairStars').addEventListener('click', (e) => {
+    const star = e.target.closest('.star');
+    if (!star) return;
+    getRecord().hair.score = Number(star.dataset.n);
+    saveRecords();
+    renderStars($('#hairStars'), getRecord().hair.score);
+  });
+
+  /* ── Style ── */
+  $('#editKeywords').addEventListener('click', () => {
+    const s = getSettings();
+    const v = prompt('风格关键词（用逗号分隔）：', s.styleKeywords.join(', '));
+    if (v === null) return;
+    s.styleKeywords = v.split(/[,，]/).map((x) => x.trim()).filter(Boolean);
+    saveSettings();
+    renderStyle();
+  });
+  $('#editColors').addEventListener('click', () => {
+    const s = getSettings();
+    const v = prompt('颜色（格式：名称:#hex，用逗号分隔）：', s.styleColors.map((c) => `${c.name}:${c.hex}`).join(', '));
+    if (v === null) return;
+    const colors = v.split(/[,，]/).map((x) => {
+      const [name, hex] = x.split(/[:：]/).map((y) => y.trim());
+      return name && hex ? { name, hex } : null;
+    }).filter(Boolean);
+    if (colors.length) { s.styleColors = colors; saveSettings(); renderStyle(); }
+  });
+
+  $('#outfitForm').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const day = getRecord();
+    day.outfit = {
+      ...day.outfit,
+      top: $('#ofTop').value.trim(), bottom: $('#ofBottom').value.trim(),
+      shoes: $('#ofShoes').value.trim(), bag: $('#ofBag').value.trim(),
+      acc: $('#ofAcc').value.trim(), hair: $('#ofHair').value.trim(),
+      why: $('#ofWhy').value.trim()
+    };
+    saveRecords();
+    toast('今日穿搭已保存 ✓');
+  });
+  $('#ofStars').addEventListener('click', (e) => {
+    const star = e.target.closest('.star');
+    if (!star) return;
+    getRecord().outfit.score = Number(star.dataset.n);
+    saveRecords();
+    renderStars($('#ofStars'), getRecord().outfit.score);
+  });
+  $('#ofPhotoBtn').addEventListener('click', () => $('#outfitFile').click());
+  $('#outfitFile').addEventListener('change', async (e) => {
+    const file = e.target.files[0];
+    e.target.value = '';
+    if (!file) return;
+    toast('正在保存照片…');
+    try {
+      const src = await storePhoto(file, 'outfit');
+      getRecord().outfit.photo = src;
+      saveRecords();
+      renderOutfitPhoto();
+      toast('穿搭照已保存 ✓');
+    } catch (err) { console.warn(err); toast('保存失败，请重试'); }
+  });
+
+  $('#outfitTplForm').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const s = getSettings();
+    s.outfitTemplates.push({ id: uid(), text: $('#outfitTplInput').value.trim() });
+    $('#outfitTplInput').value = '';
+    saveSettings();
+    renderStyle();
+  });
+  $('#outfitTplList').addEventListener('click', (e) => {
+    const row = e.target.closest('.tpl-row');
+    if (!row) return;
+    const s = getSettings();
+    if (e.target.matches('.delete-button')) {
+      s.outfitTemplates = s.outfitTemplates.filter((t) => t.id !== row.dataset.id);
+      saveSettings();
+      renderStyle();
+    } else if (e.target.matches('.tpl-use')) {
+      const t = s.outfitTemplates.find((x) => x.id === row.dataset.id);
+      if (!t) return;
+      const day = getRecord();
+      day.outfit.top = t.text;
+      saveRecords();
+      renderStyle();
+      toast('已复制到今日穿搭 ✓');
+    }
+  });
+
+  $('#wardrobeForm').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const s = getSettings();
+    s.wardrobe.push({
+      id: uid(), name: $('#wName').value.trim(), cat: $('#wCat').value,
+      color: $('#wColor').value.trim(), season: $('#wSeason').value
+    });
+    $('#wName').value = ''; $('#wColor').value = '';
+    saveSettings();
+    renderWardrobe();
+    toast('已加入衣橱 ✓');
+  });
+  $('#wardrobeFilter').addEventListener('click', (e) => {
+    const b = e.target.closest('button');
+    if (!b) return;
+    wardrobeFilterVal = b.dataset.wf;
+    renderWardrobe();
+  });
+  $('#wardrobeGrid').addEventListener('click', (e) => {
+    if (!e.target.matches('.delete-button')) return;
+    const id = e.target.closest('.wardrobe-card').dataset.id;
+    const s = getSettings();
+    s.wardrobe = s.wardrobe.filter((w) => w.id !== id);
+    saveSettings();
+    renderWardrobe();
+  });
+
+  /* ── Review ── */
+  $('#weekPrev').addEventListener('click', () => { weekOffset -= 1; renderReviewPage(); });
+  $('#weekNext').addEventListener('click', () => { if (weekOffset < 0) { weekOffset += 1; renderReviewPage(); } });
+
+  $('#weekQForm').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const s = getSettings();
+    const monday = shiftDate(mondayOf(localDateKey()), weekOffset * 7);
+    const ans = {};
+    $$('#weekQForm [data-wq]').forEach((t) => { ans[t.dataset.wq] = t.value.trim(); });
+    s.weekReviews[monday] = ans;
+    saveSettings();
+    toast('本周复盘已保存 ✓');
+  });
+
+  $('#weekPlanForm').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const s = getSettings();
+    const monday = shiftDate(mondayOf(localDateKey()), weekOffset * 7);
+    s.weekPlans[shiftDate(monday, 7)] = {
+      body: $('#wpBody').value.trim(),
+      makeup: $('#wpMakeup').value.trim(),
+      life: $('#wpLife').value.trim()
+    };
+    saveSettings();
+    toast('下周计划已保存 · 少一点目标，更多完成');
+  });
+
+  $('#rvAiBtn').addEventListener('click', async () => {
+    const keys = rvDayKeys(RV_WINDOW).filter(rvHasReview);
+    if (!keys.length) { toast('还没有复盘记录可以分析'); return; }
+    const lines = keys.map((k) => {
+      const r = records[k].review || {};
+      const parts = [`【${k}】完成率${rvCompletion(k)}%`];
+      const mood = rvMood(k);
+      if (mood) parts.push(`心情:${mood}`);
+      if (records[k].mood?.note) parts.push(`感受:${records[k].mood.note}`);
+      if (r.best || r.done) parts.push(`做得好:${r.best || r.done}`);
+      if (r.undone) parts.push(`没完成:${r.undone}`);
+      if (r.problems || r.improveToday) parts.push(`问题:${r.problems || r.improveToday}`);
+      if (r.tomorrow || r.improve) parts.push(`明天最小行动:${r.tomorrow || r.improve}`);
+      if (r.note) parts.push(`备注:${r.note}`);
+      return parts.join(' | ');
+    });
+    const promptText = `以下是我最近 ${keys.length} 天的每日复盘记录。请帮我做深度分析：1) 我最常卡住的重复模式是什么；2) 什么事情我经常能做成、可以依靠；3) 情绪和效率的规律；4) 最值得优先调整的一个点（只要一个）。请温和、具体，不要说教。\n\n${lines.join('\n')}`;
+    const ok = await rvCopyText(promptText);
+    toast(ok ? '已复制 30 天记录 ✓ 粘贴给 AI 即可深度分析' : '复制失败，请重试');
+  });
+
+  /* ── Profile ── */
+  $('#editIdentity').addEventListener('click', () => {
+    const s = getSettings();
+    const v = prompt('你的身份宣言：', s.identity);
+    if (v !== null && v.trim()) { s.identity = v.trim(); saveSettings(); renderProfile(); }
+  });
+  $('#editGoal').addEventListener('click', () => {
+    const s = getSettings();
+    const v = prompt('你的最终目标：', s.goal);
+    if (v !== null && v.trim()) { s.goal = v.trim(); saveSettings(); renderProfile(); }
+  });
+  $('#editMinActions').addEventListener('click', () => {
+    const s = getSettings();
+    const v = prompt('最小行动清单（用逗号分隔）：', s.minActions.join(', '));
+    if (v === null) return;
+    const list = v.split(/[,，]/).map((x) => x.trim()).filter(Boolean);
+    if (list.length) { s.minActions = list; saveSettings(); renderProfile(); }
+  });
+
+  $('#finPrev').addEventListener('click', () => {
+    finMonth--; if (finMonth < 0) { finMonth = 11; finYear--; }
+    renderFinance();
+  });
+  $('#finNext').addEventListener('click', () => {
+    const now = new Date();
+    if (finYear > now.getFullYear() || (finYear === now.getFullYear() && finMonth >= now.getMonth())) return;
+    finMonth++; if (finMonth > 11) { finMonth = 0; finYear++; }
+    renderFinance();
+  });
+
+  $('#exportData').addEventListener('click', exportJSON);
+  $('#importData').addEventListener('click', () => $('#importFile').click());
+  $('#importFile').addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    e.target.value = '';
+    if (file) importJSON(file);
+  });
+  $('#clearData').addEventListener('click', clearAll);
+
+  /* ── Lightbox / onboarding ── */
+  $('#mlClose').addEventListener('click', () => $('#makeupLightbox').classList.remove('show'));
+  $('#makeupLightbox').addEventListener('click', (e) => {
+    if (e.target.id === 'makeupLightbox') $('#makeupLightbox').classList.remove('show');
+  });
+
+  $('#obStart').addEventListener('click', () => {
+    const s = getSettings();
+    s.onboarded = true;
+    // gentle sample weekly goals for the first week
+    const wk = mondayOf(localDateKey());
+    if (!s.bodyGoals[wk] || !s.bodyGoals[wk].length) {
+      s.bodyGoals[wk] = [
+        { id: uid(), text: '本周步行 5 天', done: false },
+        { id: uid(), text: '练习眉毛 3 次', done: false },
+        { id: uid(), text: '上传 1 张全身照', done: false }
+      ];
+    }
+    saveSettings();
+    $('#onboarding').style.display = 'none';
+    toast('Day 1 · 从一个最小行动开始 ☾');
+  });
+}
+
+/* ═══════════ Init ═══════════ */
+function init() {
+  records = loadRecords();
+  const s = getSettings();
+  $('#paymentTime').value = nowTime();
+  bindEvents();
+  renderPage();
+  if (!s.onboarded) $('#onboarding').style.display = '';
+  initCloud();
+}
+
+init();
