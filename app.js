@@ -24,6 +24,8 @@ const SELENE_TASKS = [
   { key: 'makeup', title: '化妆练习 10 分钟', desc: '只练本周重点就好', cat: '化妆', icon: '💄' },
   { key: 'posture', title: '仪态练习 10 分钟', desc: '靠墙站立、肩颈放松', cat: '仪态', icon: '🌿' },
   { key: 'photo', title: '拍一张今日照片', desc: '记录今天的自己', cat: '拍照', icon: '📷' },
+  { key: 'xpost', title: 'X 发帖 1 条', desc: '今天的进展、思考或作品都可以', cat: '事业', icon: '📮' },
+  { key: 'website', title: '网站建设推进', desc: '一个小改动也算数', cat: '事业', icon: '🌐' },
   { key: 'review', title: '睡前复盘', desc: '三行也很好', cat: '复盘', icon: '🌙' }
 ];
 const LOW_ENERGY_KEYS = ['skincare', 'walk', 'review'];
@@ -32,7 +34,7 @@ const LOW_TARGET = 3;
 
 const CAT_META = {
   '护肤': '#86987f', '身材': '#d99a93', '化妆': '#c07b73',
-  '仪态': '#7e96ac', '拍照': '#c9a86b', '复盘': '#9d8fb3'
+  '仪态': '#7e96ac', '拍照': '#c9a86b', '事业': '#b08f77', '复盘': '#9d8fb3'
 };
 
 const MOODS = [
@@ -118,6 +120,9 @@ const DEFAULT_SETTINGS = () => ({
   bodyGoals: {},
   weekReviews: {},
   weekPlans: {},
+  siteMilestones: [],
+  projects: [],
+  ideas: [],
   wardrobe: [],
   outfitTemplates: [
     { id: 'ot1', text: '黑色吊带连衣裙' }, { id: 'ot2', text: '白色吊带长裙' },
@@ -211,6 +216,14 @@ function getRecord(date = selectedDate) {
   if (!records[date]) records[date] = blankRecord();
   const r = records[date];
   r.tasks = Array.isArray(r.tasks) ? r.tasks : [];
+  // newly added template tasks appear on today & future days (past days stay as recorded)
+  if (date >= localDateKey() && r.tasks.some((t) => SELENE_TASKS.some((st) => st.key === (t.key || t.id)))) {
+    SELENE_TASKS.forEach((st, idx) => {
+      if (!r.tasks.some((t) => (t.key || t.id) === st.key)) {
+        r.tasks.splice(Math.min(idx, r.tasks.length), 0, { ...st, id: st.key, completed: false, completedAt: null, note: '', skipped: false });
+      }
+    });
+  }
   r.review = r.review || {};
   r.payments = Array.isArray(r.payments) ? r.payments : [];
   r.makeup = r.makeup || {};
@@ -225,6 +238,7 @@ function getRecord(date = selectedDate) {
   r.hair.checks = r.hair.checks || {};
   r.outfit = r.outfit || {};
   r.mood = r.mood || {};
+  r.creation = r.creation || {};
   return r;
 }
 
@@ -434,12 +448,14 @@ function switchPage(page) {
 }
 
 function renderPage() {
+  if (getSettings().onboarded) $('#onboarding').style.display = 'none';
   if (currentPage === 'today') renderToday();
   if (currentPage === 'progress') renderProgress();
   if (currentPage === 'body') renderBody();
   if (currentPage === 'beauty') renderBeauty();
   if (currentPage === 'style') renderStyle();
   if (currentPage === 'review') renderReviewPage();
+  if (currentPage === 'career') renderCareer();
   if (currentPage === 'finance') renderFinancePage();
   if (currentPage === 'profile') renderProfile();
 }
@@ -1266,6 +1282,158 @@ function renderProfile() {
   $('#minActionList').innerHTML = s.minActions.map((a) => `<li>${escapeHTML(a)}</li>`).join('');
 }
 
+/* ═══════════ CAREER ═══════════ */
+function hasPost(k) {
+  const day = records[k];
+  if (!day) return false;
+  if (String(day.creation?.text || '').trim()) return true;
+  return (day.tasks || []).some((t) => (t.key || t.id) === 'xpost' && t.completed);
+}
+
+function postStreak() {
+  let streak = 0;
+  let cursor = localDateKey();
+  if (!hasPost(cursor)) cursor = shiftDate(cursor, -1);
+  while (hasPost(cursor)) { streak += 1; cursor = shiftDate(cursor, -1); }
+  return streak;
+}
+
+function migrateSiteMilestones() {
+  const s = getSettings();
+  if (Array.isArray(s.siteMilestones) && s.siteMilestones.length && !s.projects.length) {
+    s.projects.push({
+      id: uid(), name: 'Daily Negentropy 网站', type: '网站', goal: '',
+      status: 'active', createdAt: new Date().toISOString(),
+      tasks: s.siteMilestones.map((m) => ({ id: m.id, text: m.text, done: !!m.done })),
+      logs: []
+    });
+    s.siteMilestones = [];
+    saveSettings();
+  }
+}
+
+function projectLastPush(p) {
+  return p.logs?.[0]?.date || null;
+}
+
+function daysSince(dateKey) {
+  if (!dateKey) return null;
+  return Math.round((new Date(`${localDateKey()}T00:00:00`) - new Date(`${dateKey}T00:00:00`)) / 86400000);
+}
+
+function nudgeText(p) {
+  if (p.status === 'done') return '已完成 ❀';
+  if (p.status === 'paused') return '暂停中 · 想回来时它一直都在';
+  const d = daysSince(projectLastPush(p));
+  if (d === null) return '还没有推进记录 · 写下第一条吧';
+  if (d === 0) return '今天已推进 ✓';
+  if (d === 1) return '昨天推进过 · 今天继续一小步';
+  if (d <= 3) return `${d} 天没推进了 · 一个小改动就好`;
+  return `已经 ${d} 天没推进了 · 今天挪一小步就算赢`;
+}
+
+const PROJ_STATUS = [['active', '进行中'], ['paused', '暂停'], ['done', '完成']];
+
+function renderProjects() {
+  const s = getSettings();
+  const order = { active: 0, paused: 1, done: 2 };
+  const projects = s.projects.slice().sort((a, b) => (order[a.status] ?? 0) - (order[b.status] ?? 0));
+  $('#projectBadge').textContent = `${s.projects.filter((p) => p.status === 'active').length} 个进行中`;
+  const openIds = new Set([...document.querySelectorAll('#projectList details[open]')].map((d) => d.dataset.id));
+
+  $('#projectList').innerHTML = projects.length ? projects.map((p) => {
+    const total = p.tasks.length;
+    const done = p.tasks.filter((t) => t.done).length;
+    const pct = total ? Math.round(done / total * 100) : 0;
+    const stale = p.status === 'active' && (daysSince(projectLastPush(p)) ?? 99) > 3;
+    return `<details class="proj-card ${p.status}" data-id="${p.id}" ${openIds.has(p.id) ? 'open' : ''}>
+      <summary class="proj-head">
+        <div class="proj-title">
+          <b>${escapeHTML(p.name)}</b><span class="proj-type">${escapeHTML(p.type)}</span>
+          <small class="proj-nudge ${stale ? 'stale' : ''}">${nudgeText(p)}</small>
+        </div>
+        <span class="proj-pct">${pct}<small>%</small></span>
+      </summary>
+      <div class="proj-body">
+        ${p.goal ? `<p class="proj-goal">◎ ${escapeHTML(p.goal)}</p>` : ''}
+        <div class="progress-track"><div class="progress-fill" style="width:${pct}%"></div></div>
+        <p class="proj-meta">${done} / ${total} 个子任务完成</p>
+        <div class="proj-status-row">
+          ${PROJ_STATUS.map(([v, l]) => `<button class="focus-chip ${p.status === v ? 'active' : ''}" data-pstatus="${v}" type="button">${l}</button>`).join('')}
+          <button class="task-act proj-del" data-pdel="1" type="button" aria-label="删除项目">×</button>
+        </div>
+        <p class="proj-sub">子任务</p>
+        ${p.tasks.map((t) => `
+          <div class="goal-item proj-task" data-tid="${t.id}">
+            <input class="task-check" type="checkbox" ${t.done ? 'checked' : ''}>
+            <span class="goal-text-span ${t.done ? 'ptask-done' : ''}">${escapeHTML(t.text)}</span>
+            <button class="delete-button" type="button">×</button>
+          </div>`).join('')}
+        <form class="inline-form proj-task-form">
+          <input type="text" maxlength="60" placeholder="添加一个子任务…" required>
+          <button type="submit">添加</button>
+        </form>
+        <p class="proj-sub">推进日志</p>
+        ${(p.logs || []).slice(0, 5).map((lg) => `
+          <div class="post-row"><span class="post-date">${lg.date.slice(5)}</span><span class="post-text">${escapeHTML(lg.text)}</span></div>`).join('') || '<p class="proj-empty">每天记一句「今天推进了什么」，就是最好的监督。</p>'}
+        <form class="inline-form proj-log-form">
+          <input type="text" maxlength="100" placeholder="今天推进了什么…" required>
+          <button type="submit">记下</button>
+        </form>
+      </div>
+    </details>`;
+  }).join('') : '<div class="empty-state">还没有项目 · 在下面创建第一个，让它每天被看见。</div>';
+}
+
+function renderCareer() {
+  migrateSiteMilestones();
+  const s = getSettings();
+  const day = getRecord();
+  const keys = dateKeys();
+  const postKeys = keys.filter(hasPost);
+  const now = new Date();
+  const monthPrefix = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+  const monthPosts = postKeys.filter((k) => k.startsWith(monthPrefix)).length;
+
+  // days this week with any push (project log or website task)
+  const monday = mondayOf(localDateKey());
+  const logDates = new Set();
+  s.projects.forEach((p) => (p.logs || []).forEach((lg) => logDates.add(lg.date)));
+  const weekPush = weekDays(monday).filter((k) => k <= localDateKey() &&
+    (logDates.has(k) || (records[k]?.tasks || []).some((t) => (t.key || t.id) === 'website' && t.completed))).length;
+
+  $('#careerStats').innerHTML = [
+    [s.projects.filter((p) => p.status === 'active').length, '进行中项目', '个'],
+    [weekPush, '本周推进', '天'],
+    [postStreak(), '连续发帖', '天'],
+  ].map(([v, l, u]) => `<article class="stat-pill"><span>${l}</span><strong>${v}</strong><em>${u}</em></article>`).join('');
+
+  renderProjects();
+
+  $('#postStreakBadge').textContent = `连续 ${postStreak()} 天 · 本月 ${monthPosts}`;
+  if (document.activeElement?.form !== $('#postForm')) {
+    $('#postText').value = day.creation.text || '';
+    $('#postLink').value = day.creation.link || '';
+  }
+
+  $('#ideaList').innerHTML = s.ideas.length ? s.ideas.map((i) => `
+    <div class="goal-item idea-item" data-id="${i.id}">
+      <span class="idea-dot">✧</span>
+      <span class="goal-text-span">${escapeHTML(i.text)}</span>
+      <button class="delete-button" type="button">×</button>
+    </div>`).join('') : '<div class="empty-state">灵感随时会来，先备好一个抽屉。</div>';
+
+  const posts = postKeys.slice().reverse().slice(0, 30).map((k) => {
+    const c = records[k].creation || {};
+    return `<div class="post-row">
+      <span class="post-date">${k.slice(5)}</span>
+      <span class="post-text">${escapeHTML(c.text || '已发帖 ✓')}</span>
+      ${c.link ? `<a class="post-link" href="${escapeHTML(c.link)}" target="_blank" rel="noopener">↗</a>` : ''}
+    </div>`;
+  });
+  $('#postTimeline').innerHTML = posts.length ? posts.join('') : '<div class="empty-state">还没有发帖记录，从今天的第一条开始 ✧</div>';
+}
+
 /* ═══════════ FINANCE ═══════════ */
 function renderFinancePage() {
   renderPayments();
@@ -1976,6 +2144,122 @@ function bindEvents() {
     if (v === null) return;
     const list = v.split(/[,，]/).map((x) => x.trim()).filter(Boolean);
     if (list.length) { s.minActions = list; saveSettings(); renderProfile(); }
+  });
+
+  /* ── Career ── */
+  $('#postForm').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const day = getRecord();
+    day.creation = {
+      ...day.creation,
+      text: $('#postText').value.trim(),
+      link: $('#postLink').value.trim(),
+      at: nowTime()
+    };
+    if (day.creation.text) {
+      const xt = day.tasks.find((t) => (t.key || t.id) === 'xpost');
+      if (xt && !xt.completed) { xt.completed = true; xt.completedAt = nowTime(); }
+    }
+    saveRecords();
+    renderCareer();
+    toast('今日发帖已记录 ✓');
+  });
+
+  $('#projectForm').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const s = getSettings();
+    s.projects.unshift({
+      id: uid(), name: $('#pName').value.trim(), type: $('#pType').value,
+      goal: $('#pGoal').value.trim(), status: 'active',
+      tasks: [], logs: [], createdAt: new Date().toISOString()
+    });
+    $('#pName').value = ''; $('#pGoal').value = '';
+    saveSettings();
+    renderCareer();
+    toast('项目已创建 ⚑ 给它添加几个子任务吧');
+  });
+
+  $('#projectList').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const card = e.target.closest('.proj-card');
+    if (!card) return;
+    const s = getSettings();
+    const p = s.projects.find((x) => x.id === card.dataset.id);
+    const input = e.target.querySelector('input');
+    const text = input.value.trim();
+    if (!p || !text) return;
+    if (e.target.matches('.proj-task-form')) {
+      p.tasks.push({ id: uid(), text, done: false });
+    } else if (e.target.matches('.proj-log-form')) {
+      p.logs = p.logs || [];
+      p.logs.unshift({ date: localDateKey(), time: nowTime(), text });
+      const wt = getRecord().tasks.find((t) => (t.key || t.id) === 'website');
+      if (wt && !wt.completed) { wt.completed = true; wt.completedAt = nowTime(); }
+      saveRecords();
+      toast('推进已记录 · 今日任务同步打勾 ✓');
+    }
+    input.value = '';
+    saveSettings();
+    renderCareer();
+  });
+
+  $('#projectList').addEventListener('change', (e) => {
+    if (!e.target.matches('.task-check')) return;
+    const card = e.target.closest('.proj-card');
+    const row = e.target.closest('.proj-task');
+    if (!card || !row) return;
+    const s = getSettings();
+    const p = s.projects.find((x) => x.id === card.dataset.id);
+    const t = p?.tasks.find((x) => x.id === row.dataset.tid);
+    if (!t) return;
+    t.done = e.target.checked;
+    if (p.tasks.length && p.tasks.every((x) => x.done)) toast('这个项目的子任务全部完成了 ❀');
+    saveSettings();
+    renderCareer();
+  });
+
+  $('#projectList').addEventListener('click', (e) => {
+    const card = e.target.closest('.proj-card');
+    if (!card) return;
+    const s = getSettings();
+    const p = s.projects.find((x) => x.id === card.dataset.id);
+    if (!p) return;
+    const statusBtn = e.target.closest('[data-pstatus]');
+    if (statusBtn) {
+      p.status = statusBtn.dataset.pstatus;
+      saveSettings();
+      renderCareer();
+      return;
+    }
+    if (e.target.closest('[data-pdel]')) {
+      if (!confirm(`删除项目「${p.name}」吗？子任务和推进日志会一起删除。`)) return;
+      s.projects = s.projects.filter((x) => x.id !== p.id);
+      saveSettings();
+      renderCareer();
+      return;
+    }
+    const taskRow = e.target.closest('.proj-task');
+    if (taskRow && e.target.matches('.delete-button')) {
+      p.tasks = p.tasks.filter((x) => x.id !== taskRow.dataset.tid);
+      saveSettings();
+      renderCareer();
+    }
+  });
+
+  $('#ideaForm').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const s = getSettings();
+    s.ideas.unshift({ id: uid(), text: $('#ideaInput').value.trim() });
+    $('#ideaInput').value = '';
+    saveSettings();
+    renderCareer();
+  });
+  $('#ideaList').addEventListener('click', (e) => {
+    if (!e.target.matches('.delete-button')) return;
+    const s = getSettings();
+    s.ideas = s.ideas.filter((x) => x.id !== e.target.closest('.goal-item').dataset.id);
+    saveSettings();
+    renderCareer();
   });
 
   $('#finPrev').addEventListener('click', () => {
