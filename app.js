@@ -443,6 +443,8 @@ function switchPage(page) {
   currentPage = page;
   $$('.page').forEach((s) => s.classList.toggle('active', s.id === `${page}Page`));
   $$('.nav-item').forEach((b) => b.classList.toggle('active', b.dataset.page === page));
+  const activeNav = document.querySelector(`.nav-item[data-page="${page}"]`);
+  activeNav?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
   renderPage();
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
