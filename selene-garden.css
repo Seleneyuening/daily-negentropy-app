@@ -915,7 +915,7 @@ textarea:focus { border-bottom-color: var(--archive-olive) !important; outline: 
   bottom: 16px;
   width: 42%;
   border: 7px solid #fffdf8;
-  background: url('assets/archive-journal.jpg') center / cover no-repeat;
+  background: url('assets/selene-sunset-portrait.jpg') 52% 45% / cover no-repeat;
   box-shadow: 0 9px 20px rgba(70, 58, 47, .13);
   transform: rotate(1.8deg);
 }
