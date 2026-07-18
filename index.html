@@ -3,139 +3,205 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <meta name="theme-color" content="#faf6f1">
+  <meta name="theme-color" content="#f7f3ec">
   <title>Project Selene · 成为镜子里的自己也会喜欢的人</title>
-  <link rel="stylesheet" href="style.css?v=selene4">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;600&family=Noto+Serif+SC:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css">
+  <link rel="stylesheet" href="style.css?v=archive1">
+  <link rel="stylesheet" href="selene-garden.css?v=archive1">
 </head>
 <body>
   <div class="app-shell">
 
     <header class="topbar">
       <div>
-        <h1 class="brand">Project Selene <span class="brand-moon">☾</span></h1>
+        <h1 class="brand">Project Selene <i class="ph ph-moon-stars brand-moon" aria-hidden="true"></i></h1>
         <p class="brand-sub">Becoming the woman I want to see in the mirror.</p>
         <p class="cloud-status" id="cloudStatus">本地保存 · 正在连接云端</p>
       </div>
-      <button class="icon-button" id="jumpToday" type="button" aria-label="回到今天">今</button>
+      <button class="icon-button" id="jumpToday" type="button" aria-label="回到今天"><i class="ph ph-calendar-dot" aria-hidden="true"></i></button>
     </header>
 
     <main>
 
       <!-- ═══════════ 1. TODAY ═══════════ -->
       <section class="page active" id="todayPage">
-
-        <div class="date-strip">
-          <div>
-            <p class="date-main" id="todayLabel"></p>
-            <p class="date-sub" id="dayNumber"></p>
+        <div class="garden-home-hero">
+          <div class="date-strip">
+            <div>
+              <p class="date-main" id="todayLabel"></p>
+              <p class="date-sub" id="dayNumber"></p>
+            </div>
+            <input id="recordDate" type="date" aria-label="查看日期">
           </div>
-          <input id="recordDate" type="date" aria-label="查看日期">
-        </div>
 
-        <div class="stat-pills">
-          <article class="stat-pill"><span>连续天数</span><strong id="streakDays">0</strong><em>Days</em></article>
-          <article class="stat-pill accent"><span>本周完成率</span><strong id="weekRate">0%</strong><em id="weekRateSub"></em></article>
-          <article class="stat-pill"><span>累计记录</span><strong id="totalDays">0</strong><em>Days</em></article>
-        </div>
+          <div class="greeting-card">
+            <p class="greeting-en" id="greetingEn">早安，Selene</p>
+            <p class="greeting-zh" id="greetingZh">今天也值得被温柔记录。</p>
+            <p class="greeting-principle">把生活过成自己喜欢的样子，从一个小动作开始。</p>
+          </div>
 
-        <div class="greeting-card">
-          <p class="greeting-en" id="greetingEn">Good morning, Selene.</p>
-          <p class="greeting-zh" id="greetingZh">今天不需要完美，只需要完成最小行动。</p>
-          <p class="greeting-principle">我的目标不是更瘦，而是更协调、更健康、更有自己的风格。</p>
-          <span class="greeting-flower">✿</span>
+          <div class="garden-energy-card">
+            <div class="garden-energy-head">
+              <span>今天的能量</span>
+              <button class="low-energy-toggle" id="lowEnergyBtn" type="button"><i class="ph ph-moon" aria-hidden="true"></i> 温和而稳定</button>
+            </div>
+            <div class="garden-energy-progress">
+              <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+              <strong id="energyPercent">0%</strong>
+            </div>
+            <p class="progress-status" id="progressStatus">今天还没有开始。先完成一个最小行动。</p>
+            <span class="garden-hidden-count"><strong id="doneCount">0</strong>/<span id="targetCount">8</span></span>
+          </div>
         </div>
 
         <div id="tomorrowBanner" class="improve-banner" style="display:none">
-          <p class="improve-label">✦ 昨日复盘 · 今天的最小行动</p>
+          <p class="improve-label"><i class="ph ph-sparkle" aria-hidden="true"></i> 昨日留给今天的话</p>
           <p class="improve-text" id="tomorrowBannerText"></p>
         </div>
 
-        <section class="card section-card">
-          <div class="section-heading">
-            <div>
-              <p class="section-kicker">TODAY'S PROGRESS</p>
-              <h2>今日进度</h2>
+        <section class="garden-dayline" aria-label="今天的生活时间轴">
+          <article class="garden-moment morning">
+            <time>07:30</time>
+            <span class="garden-moment-icon"><i class="ph ph-sun" aria-hidden="true"></i></span>
+            <div class="garden-moment-content">
+              <h2>晨间习惯</h2>
+              <p>为自己种下今天的好状态</p>
+              <button class="garden-pill-action" id="gardenMorningBtn" type="button">
+                <i class="ph ph-check-circle" aria-hidden="true"></i>
+                <span>查看今天的行动</span>
+                <i class="ph ph-plus" aria-hidden="true"></i>
+              </button>
             </div>
-            <button class="low-energy-toggle" id="lowEnergyBtn" type="button">☾ 低能量模式</button>
-          </div>
-          <div class="progress-block">
-            <p class="progress-count"><strong id="doneCount">0</strong> / <span id="targetCount">8</span> <em>completed</em></p>
-            <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
-            <p class="progress-status" id="progressStatus">今天还没有开始。先完成一个最小行动。</p>
-          </div>
+          </article>
+
+          <article class="garden-moment afternoon">
+            <time>14:20</time>
+            <span class="garden-moment-icon"><i class="ph ph-camera" aria-hidden="true"></i></span>
+            <div class="garden-moment-content">
+              <h2>午后灵感</h2>
+              <p>捕捉片刻美好与灵感</p>
+              <div class="garden-inspiration-row">
+                <img src="assets/selene-garden-morning.jpg" alt="暖阳下的花、茶与手账">
+                <button class="garden-photo-action photo-upload-btn" data-ptype="全身" type="button">
+                  <i class="ph ph-plus" aria-hidden="true"></i><span>添加照片<br>或灵感</span>
+                </button>
+              </div>
+            </div>
+          </article>
+
+          <article class="garden-moment evening">
+            <time>21:30</time>
+            <span class="garden-moment-icon"><i class="ph ph-moon" aria-hidden="true"></i></span>
+            <div class="garden-moment-content">
+              <h2>夜间复盘</h2>
+              <p>回顾今天，收获成长</p>
+              <button class="garden-pill-action rose" id="gardenReviewBtn" type="button">
+                <i class="ph ph-circle" aria-hidden="true"></i>
+                <span>写下今日复盘</span>
+                <i class="ph ph-plus" aria-hidden="true"></i>
+              </button>
+            </div>
+          </article>
         </section>
 
-        <section class="card section-card">
-          <div class="section-heading">
-            <div>
-              <p class="section-kicker">TODAY'S LIST</p>
-              <h2>今日任务</h2>
-            </div>
-            <span class="count-badge" id="taskCount">0 / 0</span>
-          </div>
-          <div id="taskList"></div>
-          <form class="inline-form" id="taskForm">
-            <input id="taskInput" type="text" maxlength="60" placeholder="添加一个自定义任务…" required>
-            <button type="submit">添加</button>
-          </form>
-          <p class="soft-hint">达到 <b id="thresholdHint">5</b> 项就算成功 · 不需要一次做完</p>
-        </section>
+        <div class="garden-day-footer">
+          <p><i class="ph ph-leaf" aria-hidden="true"></i> 坚持记录第 <strong id="totalDays">0</strong> 天</p>
+          <button id="gardenTrackBtn" type="button">查看我的轨迹 <i class="ph ph-caret-right" aria-hidden="true"></i></button>
+        </div>
 
-        <section class="card section-card">
-          <div class="section-heading">
-            <div>
-              <p class="section-kicker">MOOD</p>
-              <h2>今日心情</h2>
-            </div>
-          </div>
-          <div class="mood-chips" id="moodChips"></div>
-          <div class="field full mood-note-field">
-            <label for="moodNote">今天我对自己的感觉是……</label>
-            <input id="moodNote" type="text" maxlength="120" placeholder="写一句就好">
-          </div>
-        </section>
+        <div class="garden-record-action">
+          <button id="gardenRecordBtn" type="button"><i class="ph ph-pencil-simple-line" aria-hidden="true"></i></button>
+          <span>记录此刻</span>
+        </div>
 
-        <section class="card section-card">
-          <div class="section-heading">
-            <div>
-              <p class="section-kicker">DAILY PHOTO</p>
-              <h2>今日照片</h2>
-            </div>
-          </div>
-          <div class="photo-upload-row">
-            <button class="photo-upload-btn" data-ptype="全身" type="button">＋ 全身照</button>
-            <button class="photo-upload-btn" data-ptype="半身" type="button">＋ 半身照</button>
-            <button class="photo-upload-btn" data-ptype="妆容" type="button">＋ 妆容照</button>
-          </div>
-          <div class="photo-grid" id="todayPhotoGrid"></div>
-          <input type="file" id="photoFile" accept="image/*" hidden>
-        </section>
+        <details class="garden-full-record" id="gardenFullRecord">
+          <summary><span>展开今天的完整记录</span><i class="ph ph-caret-down" aria-hidden="true"></i></summary>
 
-        <section class="card section-card">
-          <div class="section-heading">
-            <div>
-              <p class="section-kicker">ONE-LINE REVIEW</p>
-              <h2>今日一句话复盘</h2>
-            </div>
+          <div class="stat-pills garden-stats">
+            <article class="stat-pill"><span>连续天数</span><strong id="streakDays">0</strong><em>Days</em></article>
+            <article class="stat-pill accent"><span>本周完成率</span><strong id="weekRate">0%</strong><em id="weekRateSub"></em></article>
           </div>
-          <form class="review-mini-form" id="miniReviewForm">
-            <div class="field full">
-              <label for="rvBest">今天做得最好的一件事</label>
-              <input id="rvBest" type="text" maxlength="200" placeholder="小小的也算">
-            </div>
-            <div class="field full">
-              <label for="rvImproveToday">今天最想改进的一件事</label>
-              <input id="rvImproveToday" type="text" maxlength="200" placeholder="温和地记下来">
-            </div>
-            <div class="field full">
-              <label for="rvTomorrow">明天最小行动是什么</label>
-              <input id="rvTomorrow" type="text" maxlength="200" placeholder="越小越容易开始">
-            </div>
-            <button class="primary-button full" type="submit">保存复盘</button>
-            <p class="save-hint" id="miniReviewHint">内容会自动保存在本地并同步到云端</p>
-          </form>
-        </section>
 
+          <section class="card section-card" id="todayTasksSection">
+            <div class="section-heading">
+              <div><p class="section-kicker">TODAY'S LIST</p><h2>今日行动</h2></div>
+              <span class="count-badge" id="taskCount">0 / 0</span>
+            </div>
+            <div id="taskList"></div>
+            <form class="inline-form" id="taskForm">
+              <input id="taskInput" type="text" maxlength="60" placeholder="添加一个自定义任务…" required>
+              <button type="submit">添加</button>
+            </form>
+            <p class="soft-hint">达到 <b id="thresholdHint">5</b> 项就算成功 · 不需要一次做完</p>
+          </section>
+
+          <section class="card section-card" id="todayMoodSection">
+            <div class="section-heading"><div><p class="section-kicker">MOOD</p><h2>今日心情</h2></div></div>
+            <div class="mood-chips" id="moodChips"></div>
+            <div class="field full mood-note-field">
+              <label for="moodNote">今天我对自己的感觉是……</label>
+              <input id="moodNote" type="text" maxlength="120" placeholder="写一句就好">
+            </div>
+          </section>
+
+          <section class="card section-card" id="todayPhotosSection">
+            <div class="section-heading"><div><p class="section-kicker">DAILY PHOTO</p><h2>今日照片</h2></div></div>
+            <div class="photo-upload-row">
+              <button class="photo-upload-btn" data-ptype="全身" type="button"><i class="ph ph-camera-plus" aria-hidden="true"></i> 全身照</button>
+              <button class="photo-upload-btn" data-ptype="半身" type="button"><i class="ph ph-camera-plus" aria-hidden="true"></i> 半身照</button>
+              <button class="photo-upload-btn" data-ptype="妆容" type="button"><i class="ph ph-camera-plus" aria-hidden="true"></i> 妆容照</button>
+            </div>
+            <div class="photo-grid" id="todayPhotoGrid"></div>
+            <input type="file" id="photoFile" accept="image/*" hidden>
+          </section>
+
+          <section class="card section-card" id="todayReviewSection">
+            <div class="section-heading"><div><p class="section-kicker">ONE-LINE REVIEW</p><h2>今日一句话复盘</h2></div></div>
+            <form class="review-mini-form" id="miniReviewForm">
+              <div class="field full"><label for="rvBest">今天做得最好的一件事</label><input id="rvBest" type="text" maxlength="200" placeholder="小小的也算"></div>
+              <div class="field full"><label for="rvImproveToday">今天最想改进的一件事</label><input id="rvImproveToday" type="text" maxlength="200" placeholder="温和地记下来"></div>
+              <div class="field full"><label for="rvTomorrow">明天最小行动是什么</label><input id="rvTomorrow" type="text" maxlength="200" placeholder="越小越容易开始"></div>
+              <button class="primary-button full" type="submit">保存复盘</button>
+              <p class="save-hint" id="miniReviewHint">内容会自动保存在本地并同步到云端</p>
+            </form>
+          </section>
+        </details>
+
+      </section>
+
+      <!-- ═══════════ GROWTH HUB ═══════════ -->
+      <section class="page" id="growthPage">
+        <div class="page-head">
+          <p class="section-kicker">LIFE CHAPTERS</p>
+          <h2>成长篇章</h2>
+        </div>
+
+        <div class="growth-intro">
+          <p class="section-kicker">YOUR OWN PACE</p>
+          <h3>把想成为的自己，<br>写进每一天。</h3>
+          <p>身体、外表、事业和生活秩序都不是彼此分开的目标，它们共同组成你的成长。</p>
+        </div>
+
+        <div class="growth-links">
+          <button class="growth-link sage" data-module-page="body" type="button">
+            <i class="ph ph-person-simple" aria-hidden="true"></i><span><b>身材与体态</b><small>身体数据、趋势、仪态练习与目标</small></span><i class="ph ph-caret-right" aria-hidden="true"></i>
+          </button>
+          <button class="growth-link blush" data-module-page="beauty" type="button">
+            <i class="ph ph-sparkle" aria-hidden="true"></i><span><b>妆容与护理</b><small>妆容练习、相册、护肤与发型</small></span><i class="ph ph-caret-right" aria-hidden="true"></i>
+          </button>
+          <button class="growth-link cream" data-module-page="style" type="button">
+            <i class="ph ph-dress" aria-hidden="true"></i><span><b>穿搭与风格</b><small>今日穿搭、标准搭配与个人衣橱</small></span><i class="ph ph-caret-right" aria-hidden="true"></i>
+          </button>
+          <button class="growth-link olive" data-module-page="career" type="button">
+            <i class="ph ph-briefcase" aria-hidden="true"></i><span><b>事业与创造</b><small>项目监督、发帖记录与灵感库</small></span><i class="ph ph-caret-right" aria-hidden="true"></i>
+          </button>
+          <button class="growth-link sand" data-module-page="finance" type="button">
+            <i class="ph ph-wallet" aria-hidden="true"></i><span><b>生活与财务</b><small>付款记录、分类汇总与月度明细</small></span><i class="ph ph-caret-right" aria-hidden="true"></i>
+          </button>
+        </div>
       </section>
 
       <!-- ═══════════ CAREER ═══════════ -->
@@ -722,9 +788,36 @@
       <!-- ═══════════ 7. PROFILE ═══════════ -->
       <section class="page" id="profilePage">
         <div class="page-head">
-          <p class="section-kicker">PROFILE</p>
-          <h2>我的目标</h2>
+          <p class="section-kicker">MY LIFE ARCHIVE</p>
+          <h2>我的生活档案</h2>
         </div>
+
+        <section class="profile-archive-cover" aria-label="我的生活档案概览">
+          <div class="profile-archive-copy">
+            <p class="section-kicker">SELENE · JULY 2026</p>
+            <h2>在平凡的日子里，<br>收藏我热爱的一切。</h2>
+            <p>记录真实的自己，也照见正在发生的成长。</p>
+          </div>
+          <div class="profile-archive-photo">
+            <img src="assets/archive-journal.jpg" alt="在晨光里写下生活记录">
+          </div>
+          <div class="profile-archive-stats">
+            <span>已陪伴 <strong id="profileDays">0</strong> 天</span>
+            <span>记录 <strong id="profileEntries">0</strong> 日</span>
+            <span>照片 <strong id="profileMoments">0</strong> 张</span>
+          </div>
+        </section>
+
+        <section class="profile-month-archive" aria-label="七月的生活片段">
+          <div class="section-heading">
+            <div><p class="section-kicker">JUL. 2026</p><h3>七月的我</h3></div>
+          </div>
+          <div class="profile-archive-strip">
+            <article><img src="assets/archive-journal.jpg" alt="写下新的计划"><b>写下新的计划</b><small>07.04</small></article>
+            <article><img src="assets/archive-tulips.jpg" alt="周末的仪式感"><b>周末的仪式感</b><small>07.11</small></article>
+            <article><img src="assets/archive-window.jpg" alt="一场安静的独处"><b>一场安静的独处</b><small>07.16</small></article>
+          </div>
+        </section>
 
         <div class="identity-card">
           <p class="identity-kicker">IDENTITY ✧</p>
@@ -804,15 +897,11 @@
     </main>
 
     <nav class="bottom-nav" aria-label="主导航">
-      <button class="nav-item active" data-page="today" type="button"><span>⌂</span>今日</button>
-      <button class="nav-item" data-page="progress" type="button"><span>✦</span>进步</button>
-      <button class="nav-item" data-page="body" type="button"><span>♡</span>身材</button>
-      <button class="nav-item" data-page="beauty" type="button"><span>✿</span>美妆</button>
-      <button class="nav-item" data-page="style" type="button"><span>❖</span>穿搭</button>
-      <button class="nav-item" data-page="review" type="button"><span>✎</span>复盘</button>
-      <button class="nav-item" data-page="career" type="button"><span>⚑</span>事业</button>
-      <button class="nav-item" data-page="finance" type="button"><span>¥</span>财务</button>
-      <button class="nav-item" data-page="profile" type="button"><span>☾</span>我的</button>
+      <button class="nav-item active" data-page="today" type="button"><i class="ph ph-house-line" aria-hidden="true"></i><span>今日</span></button>
+      <button class="nav-item" data-page="progress" type="button"><i class="ph ph-trend-up" aria-hidden="true"></i><span>轨迹</span></button>
+      <button class="nav-item" data-page="review" type="button"><i class="ph ph-book-open-text" aria-hidden="true"></i><span>日记</span></button>
+      <button class="nav-item" data-page="growth" type="button"><i class="ph ph-sparkle" aria-hidden="true"></i><span>成长</span></button>
+      <button class="nav-item" data-page="profile" type="button"><i class="ph ph-user-circle" aria-hidden="true"></i><span>我的</span></button>
     </nav>
   </div>
 
@@ -826,7 +915,7 @@
 
   <div class="onboarding" id="onboarding" style="display:none">
     <div class="ob-card">
-      <p class="ob-moon">☾</p>
+      <p class="ob-moon"><i class="ph ph-plant" aria-hidden="true"></i></p>
       <h2>Project Selene</h2>
       <p class="ob-sub">Becoming the woman I want to see in the mirror.<br>成为镜子里的自己也会喜欢的人。</p>
       <ul class="ob-list">
@@ -834,11 +923,11 @@
         <li><b>温柔地记录变化</b><br>照片、身体数据、妆容练习、穿搭，只和过去的自己比较。</li>
         <li><b>每周轻复盘</b><br>少一点目标，更多完成。中断了也可以随时重新开始。</li>
       </ul>
-      <button class="primary-button full" id="obStart" type="button">开始 Day 1 ✧</button>
+      <button class="primary-button full" id="obStart" type="button">开始 Day 1 <i class="ph ph-arrow-right" aria-hidden="true"></i></button>
     </div>
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="app.js?v=selene4"></script>
+  <script src="app.js?v=archive1"></script>
 </body>
 </html>

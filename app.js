@@ -15,18 +15,26 @@ const MAKEUP_NS = 'daily-negentropy';
 const $ = (s) => document.querySelector(s);
 const $$ = (s) => [...document.querySelectorAll(s)];
 
+const TASK_ICONS = {
+  skincare: 'ph ph-drop', sunscreen: 'ph ph-sun', walk: 'ph ph-person-simple-walk',
+  protein: 'ph ph-egg', makeup: 'ph ph-paint-brush-broad', posture: 'ph ph-plant',
+  photo: 'ph ph-camera', xpost: 'ph ph-paper-plane-tilt', website: 'ph ph-globe',
+  review: 'ph ph-moon-stars', custom: 'ph ph-sparkle'
+};
+const taskIconClass = (task) => TASK_ICONS[task.key || task.id] || TASK_ICONS.custom;
+
 /* ── Selene daily tasks ── */
 const SELENE_TASKS = [
-  { key: 'skincare', title: '早晚护肤', desc: '温和对待今天的皮肤', cat: '护肤', icon: '🧴' },
-  { key: 'sunscreen', title: '白天防晒', desc: '出门前完成面部与颈部防晒', cat: '护肤', icon: '☀️' },
-  { key: 'walk', title: '步行或运动 30 分钟', desc: '轻盈、干净、稳定地动起来', cat: '身材', icon: '🚶‍♀️' },
-  { key: 'protein', title: '蛋白质摄入达标', desc: '保持肌肉，改善比例', cat: '身材', icon: '🥚' },
-  { key: 'makeup', title: '化妆练习 10 分钟', desc: '只练本周重点就好', cat: '化妆', icon: '💄' },
-  { key: 'posture', title: '仪态练习 10 分钟', desc: '靠墙站立、肩颈放松', cat: '仪态', icon: '🌿' },
-  { key: 'photo', title: '拍一张今日照片', desc: '记录今天的自己', cat: '拍照', icon: '📷' },
-  { key: 'xpost', title: 'X 发帖 1 条', desc: '今天的进展、思考或作品都可以', cat: '事业', icon: '📮' },
-  { key: 'website', title: '网站建设推进', desc: '一个小改动也算数', cat: '事业', icon: '🌐' },
-  { key: 'review', title: '睡前复盘', desc: '三行也很好', cat: '复盘', icon: '🌙' }
+  { key: 'skincare', title: '早晚护肤', desc: '温和对待今天的皮肤', cat: '护肤', icon: TASK_ICONS.skincare },
+  { key: 'sunscreen', title: '白天防晒', desc: '出门前完成面部与颈部防晒', cat: '护肤', icon: TASK_ICONS.sunscreen },
+  { key: 'walk', title: '步行或运动 30 分钟', desc: '轻盈、干净、稳定地动起来', cat: '身材', icon: TASK_ICONS.walk },
+  { key: 'protein', title: '蛋白质摄入达标', desc: '保持肌肉，改善比例', cat: '身材', icon: TASK_ICONS.protein },
+  { key: 'makeup', title: '化妆练习 10 分钟', desc: '只练本周重点就好', cat: '化妆', icon: TASK_ICONS.makeup },
+  { key: 'posture', title: '仪态练习 10 分钟', desc: '靠墙站立、肩颈放松', cat: '仪态', icon: TASK_ICONS.posture },
+  { key: 'photo', title: '拍一张今日照片', desc: '记录今天的自己', cat: '拍照', icon: TASK_ICONS.photo },
+  { key: 'xpost', title: 'X 发帖 1 条', desc: '今天的进展、思考或作品都可以', cat: '事业', icon: TASK_ICONS.xpost },
+  { key: 'website', title: '网站建设推进', desc: '一个小改动也算数', cat: '事业', icon: TASK_ICONS.website },
+  { key: 'review', title: '睡前复盘', desc: '三行也很好', cat: '复盘', icon: TASK_ICONS.review }
 ];
 const LOW_ENERGY_KEYS = ['skincare', 'walk', 'review'];
 const SUCCESS_TARGET = 5;
@@ -38,23 +46,23 @@ const CAT_META = {
 };
 
 const MOODS = [
-  { v: 'Calm', face: '😌', zh: '平静' },
-  { v: 'Happy', face: '😊', zh: '开心' },
-  { v: 'Tired', face: '😮‍💨', zh: '疲惫' },
-  { v: 'Anxious', face: '😥', zh: '焦虑' },
-  { v: 'Confident', face: '😎', zh: '自信' },
-  { v: 'Low Energy', face: '🥱', zh: '低能量' }
+  { v: 'Calm', face: 'ph ph-leaf', zh: '平静' },
+  { v: 'Happy', face: 'ph ph-sun', zh: '开心' },
+  { v: 'Tired', face: 'ph ph-battery-low', zh: '疲惫' },
+  { v: 'Anxious', face: 'ph ph-cloud-rain', zh: '焦虑' },
+  { v: 'Confident', face: 'ph ph-sparkle', zh: '自信' },
+  { v: 'Low Energy', face: 'ph ph-moon', zh: '低能量' }
 ];
 
 const MAKEUP_STEPS = [
-  { key: 'base', name: '底妆', icon: '🧴' },
-  { key: 'conceal', name: '遮瑕', icon: '🖌' },
-  { key: 'brow', name: '眉毛', icon: '🖊' },
-  { key: 'shadow', name: '眼影', icon: '🎨' },
-  { key: 'liner', name: '眼线', icon: '✒️' },
-  { key: 'lash', name: '睫毛', icon: '👁' },
-  { key: 'blush', name: '腮红', icon: '🌸' },
-  { key: 'lip', name: '唇妆', icon: '💋' }
+  { key: 'base', name: '底妆', icon: 'ph ph-drop-half' },
+  { key: 'conceal', name: '遮瑕', icon: 'ph ph-paint-brush' },
+  { key: 'brow', name: '眉毛', icon: 'ph ph-pencil-simple' },
+  { key: 'shadow', name: '眼影', icon: 'ph ph-palette' },
+  { key: 'liner', name: '眼线', icon: 'ph ph-pen-nib' },
+  { key: 'lash', name: '睫毛', icon: 'ph ph-eye' },
+  { key: 'blush', name: '腮红', icon: 'ph ph-flower-lotus' },
+  { key: 'lip', name: '唇妆', icon: 'ph ph-lips' }
 ];
 
 const POSTURE_EX = [
@@ -89,9 +97,9 @@ const HAIR_TPLS = ['直发', '自然卷', '空气刘海', '八字刘海', '半�
 const WARDROBE_CATS = ['连衣裙', '上衣', '半身裙', '外套', '鞋', '包', '饰品'];
 
 const PAY_CATS = [
-  { id: '餐饮', icon: '🍜' }, { id: '购物', icon: '🛍' }, { id: '交通', icon: '🚌' },
-  { id: '娱乐', icon: '🎬' }, { id: '生活', icon: '🏠' }, { id: '学习', icon: '📚' },
-  { id: '健康', icon: '💊' }, { id: '其他', icon: '💸' }
+  { id: '餐饮', icon: 'ph ph-bowl-food' }, { id: '购物', icon: 'ph ph-shopping-bag' }, { id: '交通', icon: 'ph ph-train' },
+  { id: '娱乐', icon: 'ph ph-film-strip' }, { id: '生活', icon: 'ph ph-house-line' }, { id: '学习', icon: 'ph ph-book-open' },
+  { id: '健康', icon: 'ph ph-first-aid' }, { id: '其他', icon: 'ph ph-dots-three-circle' }
 ];
 
 const WEEK_QUESTIONS = [
@@ -442,8 +450,10 @@ function dayNumber() {
 function switchPage(page) {
   currentPage = page;
   $$('.page').forEach((s) => s.classList.toggle('active', s.id === `${page}Page`));
-  $$('.nav-item').forEach((b) => b.classList.toggle('active', b.dataset.page === page));
-  const activeNav = document.querySelector(`.nav-item[data-page="${page}"]`);
+  const growthPages = ['body', 'beauty', 'style', 'career', 'finance'];
+  const navPage = growthPages.includes(page) ? 'growth' : page;
+  $$('.nav-item').forEach((b) => b.classList.toggle('active', b.dataset.page === navPage));
+  const activeNav = document.querySelector(`.nav-item[data-page="${navPage}"]`);
   activeNav?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
   renderPage();
   window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -465,10 +475,10 @@ function renderPage() {
 /* ═══════════ 1. TODAY ═══════════ */
 function greetingParts() {
   const h = new Date().getHours();
-  const en = h < 12 ? 'Good morning, Selene.' : h < 18 ? 'Good afternoon, Selene.' : 'Good evening, Selene.';
+  const en = h < 12 ? '早安，Selene' : h < 18 ? '午安，Selene' : '晚安，Selene';
   const keys = dateKeys().filter((k) => k < localDateKey());
   const broke = keys.length > 0 && !isSuccess(records[shiftDate(localDateKey(), -1)]) && calcStreak() === 0;
-  const zh = broke ? '今天可以重新开始，不需要补回昨天。' : '今天不需要完美，只需要完成最小行动。';
+  const zh = broke ? '今天可以重新开始，也值得被温柔记录。' : '今天也值得被温柔记录。';
   return { en, zh };
 }
 
@@ -520,35 +530,37 @@ function renderToday() {
   $('#targetCount').textContent = visible.length;
   $('#taskCount').textContent = `${done} / ${visible.length}`;
   $('#thresholdHint').textContent = target;
-  $('#progressFill').style.width = `${visible.length ? Math.min(100, Math.round(done / visible.length * 100)) : 0}%`;
+  const energyPct = visible.length ? Math.min(100, Math.round(done / visible.length * 100)) : 0;
+  $('#progressFill').style.width = `${energyPct}%`;
+  $('#energyPercent').textContent = `${energyPct}%`;
   const st = statusText(done, target, visible.length);
   $('#progressStatus').textContent = st.text;
   $('#progressStatus').classList.toggle('neutral', st.neutral);
   $('#lowEnergyBtn').classList.toggle('on', !!day.lowEnergy);
-  $('#lowEnergyBtn').textContent = day.lowEnergy ? '☾ 低能量模式 · 开' : '☾ 低能量模式';
+  $('#lowEnergyBtn').innerHTML = `<i class="ph ph-moon" aria-hidden="true"></i> ${day.lowEnergy ? '低能量模式 · 开' : '温和而稳定'}`;
 
   // task list
   $('#taskList').innerHTML = tasks.map((t) => `
     <div class="task-item ${t.completed ? 'done' : ''} ${t.skipped ? 'skipped' : ''}" data-id="${escapeHTML(t.id)}">
       <input class="task-check" type="checkbox" ${t.completed ? 'checked' : ''} ${t.skipped ? 'disabled' : ''} aria-label="完成">
       <div class="task-main">
-        <span class="task-title">${t.icon ? `<span class="task-icon">${t.icon}</span>` : ''}${escapeHTML(t.title)}</span>
+        <span class="task-title"><span class="task-icon"><i class="${taskIconClass(t)}" aria-hidden="true"></i></span>${escapeHTML(t.title)}</span>
         ${t.desc ? `<span class="task-desc">${escapeHTML(t.desc)}</span>` : ''}
         ${t.completedAt ? `<span class="task-time">完成于 ${escapeHTML(t.completedAt)}</span>` : ''}
-        ${t.note ? `<span class="task-note-text">✎ ${escapeHTML(t.note)}</span>` : ''}
+        ${t.note ? `<span class="task-note-text"><i class="ph ph-note-pencil" aria-hidden="true"></i> ${escapeHTML(t.note)}</span>` : ''}
         ${t.skipped ? `<span class="task-note-text">今日跳过</span>` : ''}
       </div>
       <div class="task-actions">
-        <button class="task-act" data-act="note" type="button" aria-label="备注">✎</button>
-        <button class="task-act" data-act="skip" type="button" aria-label="跳过">⊘</button>
-        ${t.cat === '自定义' || t.category === '自定义' ? `<button class="task-act" data-act="del" type="button" aria-label="删除">×</button>` : ''}
+        <button class="task-act" data-act="note" type="button" aria-label="备注"><i class="ph ph-note-pencil" aria-hidden="true"></i></button>
+        <button class="task-act" data-act="skip" type="button" aria-label="跳过"><i class="ph ph-minus-circle" aria-hidden="true"></i></button>
+        ${t.cat === '自定义' || t.category === '自定义' ? `<button class="task-act" data-act="del" type="button" aria-label="删除"><i class="ph ph-trash" aria-hidden="true"></i></button>` : ''}
       </div>
     </div>`).join('') || '<div class="empty-state">今天还没有任务。</div>';
 
   // mood
   $('#moodChips').innerHTML = MOODS.map((m) => `
     <button class="mood-chip ${day.mood.v === m.v ? 'active' : ''}" data-mood="${m.v}" type="button">
-      <span class="mc-face">${m.face}</span><span class="mc-name">${m.v}</span>
+      <span class="mc-face"><i class="${m.face}" aria-hidden="true"></i></span><span class="mc-name">${m.zh}</span>
     </button>`).join('');
   if (document.activeElement !== $('#moodNote')) $('#moodNote').value = day.mood.note || '';
 
@@ -587,7 +599,7 @@ function renderPayments() {
   $('#paymentMiniTotal').textContent = money(total);
   $('#paymentEmpty').hidden = payments.length > 0;
   $('#payCatChips').innerHTML = PAY_CATS.map((c) => `
-    <div class="payment-cat-chip ${selectedPayCat === c.id ? 'active' : ''}" data-cat="${c.id}">${c.icon} ${c.id}</div>`).join('');
+    <div class="payment-cat-chip ${selectedPayCat === c.id ? 'active' : ''}" data-cat="${c.id}"><i class="${c.icon}" aria-hidden="true"></i> ${c.id}</div>`).join('');
   $('#paymentList').innerHTML = payments.map((p) => `
     <div class="payment-row" data-id="${p.id}">
       <div class="pay-cat-icon">${catIcon(p.category)}</div>
@@ -600,7 +612,10 @@ function renderPayments() {
     </div>`).join('');
 }
 
-function catIcon(cat) { return PAY_CATS.find((c) => c.id === cat)?.icon || '💸'; }
+function catIcon(cat) {
+  const icon = PAY_CATS.find((c) => c.id === cat)?.icon || 'ph ph-dots-three-circle';
+  return `<i class="${icon}" aria-hidden="true"></i>`;
+}
 
 /* ═══════════ 2. PROGRESS ═══════════ */
 function renderProgress() {
@@ -885,7 +900,7 @@ function renderMakeupSteps() {
     const skill = d.skill || 0;
     return `<div class="mk-step ${d.done ? 'done' : ''} ${d.open ? 'open' : ''}" data-step="${st.key}">
       <div class="mk-step-row" data-mk="toggle">
-        <span class="mk-step-icon">${st.icon}</span>
+        <span class="mk-step-icon"><i class="${st.icon}" aria-hidden="true"></i></span>
         <span class="mk-step-name">${st.name}${focus === st.key ? '<span class="mk-focus-tag">本周重点</span>' : ''}</span>
         <span class="star-row sm">${[1, 2, 3, 4, 5].map((n) => `<button class="star ${n <= skill ? 'on' : ''}" data-mk="star" data-n="${n}" type="button">★</button>`).join('')}</span>
         <span class="mk-step-check" data-mk="check">✓</span>
@@ -899,12 +914,12 @@ function renderMakeupSteps() {
   }).join('');
 }
 
-async function setMakeupSlot(sel, emoji, label, path) {
+async function setMakeupSlot(sel, iconClass, label, path) {
   const slot = $(sel);
   const url = await resolvePhoto(path);
   slot.innerHTML = url
     ? `<img class="ms-photo" src="${url}" alt=""><span class="ms-retake">换一张</span>`
-    : `<span class="ms-emoji">${emoji}</span><span class="ms-label">${label}</span>`;
+    : `<span class="ms-emoji"><i class="${iconClass}" aria-hidden="true"></i></span><span class="ms-label">${label}</span>`;
 }
 
 function makeupAlbumDays() {
@@ -914,8 +929,8 @@ function makeupAlbumDays() {
 async function renderMakeupAlbum() {
   $('#makeupDateLabel').textContent = displayDate(selectedDate, false);
   const makeup = getRecord().makeup;
-  await setMakeupSlot('#slotBefore', '📷', '素颜 before', makeup.before);
-  await setMakeupSlot('#slotAfter', '💄', '妆后 after', makeup.after);
+  await setMakeupSlot('#slotBefore', 'ph ph-camera', '素颜 before', makeup.before);
+  await setMakeupSlot('#slotAfter', 'ph ph-sparkle', '妆后 after', makeup.after);
 
   const days = makeupAlbumDays();
   const card = $('#makeupCompareCard');
@@ -1282,6 +1297,16 @@ function renderProfile() {
   $('#identityText').textContent = s.identity;
   $('#goalText').textContent = s.goal;
   $('#minActionList').innerHTML = s.minActions.map((a) => `<li>${escapeHTML(a)}</li>`).join('');
+  const keys = dateKeys();
+  const photoCount = keys.reduce((sum, key) => {
+    const day = records[key] || {};
+    const daily = Array.isArray(day.photos) ? day.photos.length : 0;
+    const makeup = day.makeupAlbum ? Object.values(day.makeupAlbum).filter(Boolean).length : 0;
+    return sum + daily + makeup + (day.outfit?.photo ? 1 : 0);
+  }, 0);
+  $('#profileDays').textContent = dayNumber();
+  $('#profileEntries').textContent = keys.length;
+  $('#profileMoments').textContent = photoCount;
 }
 
 /* ═══════════ CAREER ═══════════ */
@@ -1485,7 +1510,7 @@ function renderFinance() {
     ? catSorted.map(({ id, icon, amt }) => {
         const pct = monthTotal > 0 ? Math.round(amt / monthTotal * 100) : 0;
         const w = Math.round(amt / maxAmt * 100);
-        return `<div class="fin-method-item"><div class="fin-method-top"><span class="fin-method-name">${icon} ${escapeHTML(id)}</span><span><span class="fin-method-amt">${money(amt)}</span><span class="fin-method-pct">${pct}%</span></span></div><div class="fin-bar-track"><div class="fin-bar-fill" style="width:${w}%"></div></div></div>`;
+        return `<div class="fin-method-item"><div class="fin-method-top"><span class="fin-method-name"><i class="${icon}" aria-hidden="true"></i> ${escapeHTML(id)}</span><span><span class="fin-method-amt">${money(amt)}</span><span class="fin-method-pct">${pct}%</span></span></div><div class="fin-bar-track"><div class="fin-bar-fill" style="width:${w}%"></div></div></div>`;
       }).join('')
     : '';
 
@@ -1558,6 +1583,17 @@ function bindEvents() {
   $('#jumpToday').addEventListener('click', () => { selectedDate = localDateKey(); switchPage('today'); });
   $('#recordDate').addEventListener('change', () => { selectedDate = $('#recordDate').value || localDateKey(); renderPage(); });
 
+  const openFullRecord = (target) => {
+    const details = $('#gardenFullRecord');
+    details.open = true;
+    requestAnimationFrame(() => $(target)?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
+  };
+  $('#gardenMorningBtn').addEventListener('click', () => openFullRecord('#todayTasksSection'));
+  $('#gardenReviewBtn').addEventListener('click', () => openFullRecord('#todayReviewSection'));
+  $('#gardenRecordBtn').addEventListener('click', () => openFullRecord('#todayMoodSection'));
+  $('#gardenTrackBtn').addEventListener('click', () => switchPage('progress'));
+  $$('.growth-link[data-module-page]').forEach((b) => b.addEventListener('click', () => switchPage(b.dataset.modulePage)));
+
   /* ── Today ── */
   $('#lowEnergyBtn').addEventListener('click', () => {
     const day = getRecord();
@@ -1602,7 +1638,7 @@ function bindEvents() {
     e.preventDefault();
     const title = $('#taskInput').value.trim();
     if (!title) return;
-    getRecord().tasks.push({ id: uid(), title, desc: '', cat: '自定义', icon: '✦', completed: false, completedAt: null, note: '', skipped: false });
+    getRecord().tasks.push({ id: uid(), title, desc: '', cat: '自定义', icon: TASK_ICONS.custom, completed: false, completedAt: null, note: '', skipped: false });
     $('#taskInput').value = '';
     saveRecords();
     renderToday();
