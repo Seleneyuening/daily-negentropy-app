@@ -1,7 +1,9 @@
 /* ═══════════ Project Selene · app.js ═══════════
    Moonlight / Growth / Grace / Softness / Consistency */
 
-const STORAGE_KEY = 'dailyRecords';
+const LOCAL_PREVIEW_ID = new URLSearchParams(window.location.search).get('localPreview');
+const LOCAL_PREVIEW = LOCAL_PREVIEW_ID !== null;
+const STORAGE_KEY = LOCAL_PREVIEW ? `dailyRecordsPreview:${LOCAL_PREVIEW_ID || 'default'}` : 'dailyRecords';
 const SETTINGS_KEY = '_settings';
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -39,6 +41,20 @@ const SELENE_TASKS = [
 const LOW_ENERGY_KEYS = ['skincare', 'walk', 'review'];
 const SUCCESS_TARGET = 5;
 const LOW_TARGET = 3;
+
+const FOCUS_PRESETS = {
+  '护肤': ['skincare', 'sunscreen', 'review'],
+  '身体': ['walk', 'protein', 'posture'],
+  '形象': ['makeup', 'photo', 'skincare'],
+  '事业': ['website', 'xpost', 'review'],
+  '情绪': ['review', 'walk', 'skincare']
+};
+const GENTLE_WORDS = [
+  '一个小动作，也在改变今天。',
+  '不用做很多，开始就已经很好。',
+  '今天的你，正在温柔地向前走。',
+  '这一笔记录，会成为以后回看的光。'
+];
 
 const CAT_META = {
   '护肤': '#86987f', '身材': '#d99a93', '化妆': '#c07b73',
@@ -113,6 +129,8 @@ const WEEK_QUESTIONS = [
 
 const DEFAULT_SETTINGS = () => ({
   onboarded: false,
+  focusAreas: [],
+  milestoneMoments: [],
   identity: '我是一个热爱美、持续成长、拥有独立审美的人。\n我不追求完美，我追求今天比昨天更好一点。',
   goal: '打造自然、精致、轻盈、有个人风格的女性形象。',
   minActions: ['护肤完成', '步行 10 分钟', '化妆练习 5 分钟', '拍一张照片', '写一句复盘'],
@@ -157,6 +175,9 @@ let finMonth = new Date().getMonth();
 let photoUploadType = '全身';
 let makeupKind = 'after';
 let posTimer = null;
+let ritualTimer = null;
+let deferredInstallPrompt = null;
+let onboardingFocus = [];
 const urlCache = {};
 
 /* ── Helpers ── */
@@ -179,6 +200,68 @@ function toast(msg) {
   $('#toast').textContent = msg;
   $('#toast').classList.add('show');
   toastTimer = setTimeout(() => $('#toast').classList.remove('show'), 2000);
+}
+
+function gentleEmpty(icon, title, text, action = '', label = '') {
+  return `<div class="gentle-empty"><i class="${icon}" aria-hidden="true"></i><div><b>${escapeHTML(title)}</b><p>${escapeHTML(text)}</p></div>${action ? `<button type="button" data-empty-action="${escapeHTML(action)}">${escapeHTML(label)}</button>` : ''}</div>`;
+}
+
+function showRitual(title, text, icon = 'ph ph-sparkle') {
+  clearTimeout(ritualTimer);
+  $('#ritualFeedback').querySelector('.ritual-icon i').className = icon;
+  $('#ritualTitle').textContent = title;
+  $('#ritualText').textContent = text;
+  $('#ritualFeedback').classList.add('show');
+  $('#ritualFeedback').setAttribute('aria-hidden', 'false');
+  ritualTimer = setTimeout(() => {
+    $('#ritualFeedback').classList.remove('show');
+    $('#ritualFeedback').setAttribute('aria-hidden', 'true');
+  }, 2600);
+}
+
+function starterKeys(focusAreas = onboardingFocus) {
+  const keys = [];
+  for (let index = 0; index < 3 && keys.length < 3; index += 1) {
+    focusAreas.forEach((area) => {
+      const key = (FOCUS_PRESETS[area] || [])[index];
+      if (key && !keys.includes(key) && keys.length < 3) keys.push(key);
+    });
+  }
+  LOW_ENERGY_KEYS.forEach((key) => { if (!keys.includes(key) && keys.length < 3) keys.push(key); });
+  return keys.slice(0, 3);
+}
+
+function renderOnboardingFocus() {
+  $$('#obFocusChoices button').forEach((button) => {
+    const selected = onboardingFocus.includes(button.dataset.focus);
+    button.classList.toggle('selected', selected);
+    button.setAttribute('aria-pressed', String(selected));
+  });
+  const keys = starterKeys();
+  $('#obStarterList').innerHTML = onboardingFocus.length
+    ? keys.map((key) => `<li><i class="${taskIconClass(SELENE_TASKS.find((task) => task.key === key) || {})}" aria-hidden="true"></i>${escapeHTML(SELENE_TASKS.find((task) => task.key === key)?.title || key)}</li>`).join('')
+    : '<li>选择一个方向后，这里会为你准备行动。</li>';
+  $('#obStart').disabled = !onboardingFocus.length;
+}
+
+function renderInstallState() {
+  const standalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+  if (standalone) {
+    $('#installAppBtn').textContent = '已安装';
+    $('#installAppBtn').disabled = true;
+    $('#installAppHint').textContent = '现在可以像 App 一样打开，也可以在离线时继续记录。';
+  } else if (deferredInstallPrompt) {
+    $('#installAppBtn').textContent = '安装到主屏幕';
+    $('#installAppHint').textContent = '安装后可从主屏幕直接打开，记录路径更短。';
+  } else {
+    $('#installAppBtn').textContent = '查看安装方法';
+  }
+}
+
+function registerPWA() {
+  if (LOCAL_PREVIEW) return;
+  if (!('serviceWorker' in navigator)) return;
+  navigator.serviceWorker.register('./sw.js').catch((error) => console.warn('service worker unavailable:', error));
 }
 function displayDate(dateKey, withYear = true) {
   const date = new Date(`${dateKey}T00:00:00`);
@@ -281,6 +364,7 @@ function saveSettings() {
 function setCloudStatus(message, state = '') {
   $('#cloudStatus').textContent = message;
   $('#cloudStatus').dataset.state = state;
+  $('#cloudStatus').title = state === 'error' ? '点击重新同步' : '';
 }
 
 function mergeRecords(localRecords, cloudRecords) {
@@ -306,7 +390,7 @@ async function syncCloud() {
     setCloudStatus('已同步到云端 ☁', 'ok');
   } catch (error) {
     console.warn('Supabase sync unavailable:', error);
-    setCloudStatus('已保存本地 · 云端稍后重试', 'error');
+    setCloudStatus('已保存本地 · 点击重试同步', 'error');
   }
 }
 
@@ -328,6 +412,7 @@ async function pullCloud() {
 }
 
 async function initCloud() {
+  if (LOCAL_PREVIEW) { setCloudStatus('本地预览 · 不同步云端', 'ok'); return; }
   if (!window.supabase?.createClient) { setCloudStatus('已保存在本地', 'error'); return; }
   try {
     cloudClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
@@ -340,7 +425,7 @@ async function initCloud() {
     }, 15000);
   } catch (error) {
     console.warn('Supabase sync unavailable:', error);
-    setCloudStatus('已保存在本地 · 云端稍后重试', 'error');
+    setCloudStatus('已保存在本地 · 点击重试同步', 'error');
   }
 }
 
@@ -399,7 +484,10 @@ async function resolvePhoto(src) {
 /* ── Day metrics ── */
 function activeTasks(day, dateKey) {
   const tasks = Array.isArray(day?.tasks) ? day.tasks : [];
-  if (day?.lowEnergy) return tasks.filter((t) => LOW_ENERGY_KEYS.includes(t.key || t.id));
+  if (day?.lowEnergy) {
+    const gentleKeys = Array.isArray(day.focusTaskKeys) && day.focusTaskKeys.length ? day.focusTaskKeys : LOW_ENERGY_KEYS;
+    return gentleKeys.map((key) => tasks.find((task) => (task.key || task.id) === key)).filter(Boolean);
+  }
   return tasks;
 }
 function doneCountOf(day) {
@@ -483,7 +571,7 @@ function greetingParts() {
 }
 
 function statusText(done, target, total) {
-  if (done === 0) return { text: '今天还没有开始。先完成一个最小行动。', neutral: true };
+  if (done === 0) return { text: '从哪一个开始都可以。完成第一项，今天就有了起点。', neutral: true };
   if (done < target) return { text: '你已经开始了。不需要一次做完。', neutral: true };
   if (done < total) return { text: 'Today counts. 今天已经算成功 ✧', neutral: false };
   return { text: 'A gentle, complete day. 今天完成得很好 ❀', neutral: false };
@@ -577,7 +665,10 @@ function renderToday() {
 async function renderTodayPhotos() {
   const day = getRecord();
   const grid = $('#todayPhotoGrid');
-  if (!day.photos.length) { grid.innerHTML = ''; return; }
+  if (!day.photos.length) {
+    grid.innerHTML = gentleEmpty('ph ph-camera-plus', '今天的光还没有被收藏', '拍一张此刻，不需要特别漂亮，真实就很好。', 'today-photo', '拍下今天');
+    return;
+  }
   const items = await Promise.all(day.photos.map(async (p) => {
     const url = await resolvePhoto(p.src);
     if (!url) return '';
@@ -619,6 +710,7 @@ function catIcon(cat) {
 
 /* ═══════════ 2. PROGRESS ═══════════ */
 function renderProgress() {
+  $('#progressWelcome').hidden = dateKeys().length > 1;
   renderHeatmap();
   renderProgressStats();
   renderCatChart();
@@ -749,12 +841,23 @@ function renderCompareControls() {
 async function renderCompareView() {
   const a = $('#compareA').value, b = $('#compareB').value;
   const view = $('#compareView');
-  if (!a || !b) { view.innerHTML = '<p class="empty-state" style="padding:0 0 12px">上传照片后，可以在这里对比 Day 1 与现在。</p>'; return; }
+  if (!a || !b) {
+    view.innerHTML = gentleEmpty('ph ph-images-square', '变化需要两张照片才能被看见', '先留下今天，未来的你会感谢这一刻。', 'progress-photo', '添加第一张照片');
+    return;
+  }
   const pa = dayPhotoEntries(a)[0], pb = dayPhotoEntries(b)[0];
   const [ua, ub] = await Promise.all([resolvePhoto(pa?.src), resolvePhoto(pb?.src)]);
-  view.innerHTML = `<div class="makeup-compare">
-    <figure><img src="${ua || ''}" alt=""><figcaption>${a}</figcaption></figure>
-    <figure><img src="${ub || ''}" alt=""><figcaption>${b}</figcaption></figure>
+  if (!ua || !ub) {
+    view.innerHTML = gentleEmpty('ph ph-cloud-slash', '照片暂时没有加载出来', '记录还在，网络恢复后可以再试一次。', 'retry-photos', '重新加载');
+    return;
+  }
+  view.innerHTML = `<div class="photo-compare-slider" style="--compare-position:50%">
+    <img class="photo-compare-base" src="${ua}" alt="${a} 的记录照片">
+    <img class="photo-compare-overlay" src="${ub}" alt="${b} 的记录照片">
+    <span class="photo-compare-label before">${a}</span>
+    <span class="photo-compare-label after">${b}</span>
+    <span class="photo-compare-handle" aria-hidden="true"><i class="ph ph-caret-left-right"></i></span>
+    <input class="photo-compare-range" type="range" min="0" max="100" value="50" aria-label="拖动查看前后变化">
   </div>`;
 }
 
@@ -768,13 +871,13 @@ async function renderPhotoTimeline() {
     });
   });
   if (!entries.length) {
-    tl.innerHTML = '<p class="empty-state" style="grid-column:1/-1;padding:0 0 8px">还没有这类照片，慢慢记录就好 ✿</p>';
+    tl.innerHTML = gentleEmpty('ph ph-image', '这里会成为你的时间胶片', '每一张照片都会自动按日期和类型收进来。', 'progress-photo', '添加一张照片');
     return;
   }
   const items = await Promise.all(entries.slice(0, 60).map(async (e) => {
     const url = await resolvePhoto(e.src);
     if (!url) return '';
-    return `<button class="makeup-tl-item" type="button" data-url="${url}" data-date="${e.date}"><img src="${url}" alt="" loading="lazy"><span>${e.date.slice(5)} · ${e.type}</span></button>`;
+    return `<article class="timeline-photo-card"><button class="makeup-tl-item" type="button" data-url="${url}" aria-label="查看 ${e.date} ${e.type}照片"><img src="${url}" alt="" loading="lazy"></button><button class="timeline-jump" type="button" data-jump-date="${e.date}"><span>${e.date.slice(5)} · ${e.type}</span><i class="ph ph-arrow-right" aria-hidden="true"></i></button></article>`;
   }));
   tl.innerHTML = items.join('');
 }
@@ -1606,12 +1709,31 @@ function bindEvents() {
   $('#taskList').addEventListener('change', (e) => {
     if (!e.target.matches('.task-check')) return;
     const id = e.target.closest('.task-item').dataset.id;
-    const task = getRecord().tasks.find((t) => t.id === id);
+    const day = getRecord();
+    const task = day.tasks.find((t) => t.id === id);
     if (!task) return;
+    const beforeDone = doneCountOf(day);
     task.completed = e.target.checked;
     task.completedAt = task.completed ? nowTime() : null;
     saveRecords();
     renderToday();
+    if (task.completed) {
+      const afterDone = doneCountOf(day);
+      const target = targetOf(day);
+      requestAnimationFrame(() => {
+        const row = $$('.task-item').find((item) => item.dataset.id === id);
+        row?.classList.add('just-completed');
+      });
+      if (beforeDone < target && afterDone >= target) {
+        const streak = calcStreak();
+        const milestone = [3, 7, 30, 100].includes(streak) ? ` · 连续 ${streak} 天` : '';
+        showRitual(`今天已经成立了${milestone}`, '你完成了今天的最小目标，剩下的都算额外礼物。', 'ph ph-flower-lotus');
+      } else if (afterDone === 1) {
+        showRitual('已经开始了', GENTLE_WORDS[0], 'ph ph-sparkle');
+      } else {
+        toast(GENTLE_WORDS[afterDone % GENTLE_WORDS.length]);
+      }
+    }
   });
 
   $('#taskList').addEventListener('click', (e) => {
@@ -1767,9 +1889,20 @@ function bindEvents() {
   });
   $('#compareA').addEventListener('change', renderCompareView);
   $('#compareB').addEventListener('change', renderCompareView);
+  $('#compareView').addEventListener('input', (e) => {
+    if (!e.target.matches('.photo-compare-range')) return;
+    e.target.closest('.photo-compare-slider')?.style.setProperty('--compare-position', `${e.target.value}%`);
+  });
   $('#photoTimeline').addEventListener('click', (e) => {
+    const jump = e.target.closest('[data-jump-date]');
+    if (jump) {
+      selectedDate = jump.dataset.jumpDate;
+      switchPage('today');
+      $('#gardenFullRecord').open = true;
+      return;
+    }
     const item = e.target.closest('.makeup-tl-item');
-    if (item) openLightbox(item.dataset.url, item.dataset.date);
+    if (item) openLightbox(item.dataset.url, item.closest('.timeline-photo-card')?.querySelector('[data-jump-date]')?.dataset.jumpDate || '');
   });
 
   /* ── Body ── */
@@ -2320,15 +2453,82 @@ function bindEvents() {
   });
   $('#clearData').addEventListener('click', clearAll);
 
+  $('#cloudStatus').addEventListener('click', async () => {
+    if ($('#cloudStatus').dataset.state !== 'error') return;
+    setCloudStatus('正在重新连接…', 'syncing');
+    try {
+      if (!cloudClient) await initCloud();
+      else { await pullCloud(); await syncCloud(); renderPage(); }
+      toast('云端同步已恢复');
+    } catch (error) {
+      console.warn('manual sync retry unavailable:', error);
+      setCloudStatus('已保存在本地 · 点击重试同步', 'error');
+      toast('现在仍无法连接，记录已经安全保存在本地');
+    }
+  });
+
+  document.addEventListener('click', (e) => {
+    const action = e.target.closest('[data-empty-action]')?.dataset.emptyAction;
+    if (!action) return;
+    if (action === 'today-photo' || action === 'progress-photo') {
+      switchPage('today');
+      openFullRecord('#todayPhotosSection');
+      photoUploadType = '全身';
+      $('#photoFile').click();
+    }
+    if (action === 'today-action') {
+      switchPage('today');
+      openFullRecord('#todayTasksSection');
+    }
+    if (action === 'retry-photos') renderCompareView();
+    if (action === 'payment') {
+      $('#paymentItem').scrollIntoView({ behavior: 'smooth', block: 'center' });
+      $('#paymentItem').focus();
+    }
+  });
+
+  $('#installAppBtn').addEventListener('click', async () => {
+    if (window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone) {
+      toast('Selene 已经在主屏幕上了');
+      return;
+    }
+    if (deferredInstallPrompt) {
+      deferredInstallPrompt.prompt();
+      await deferredInstallPrompt.userChoice;
+      deferredInstallPrompt = null;
+      renderInstallState();
+      return;
+    }
+    const isiOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+    toast(isiOS ? '在 Safari 点“分享”，再选择“添加到主屏幕”' : '请打开浏览器菜单，选择“安装应用”或“添加到主屏幕”');
+  });
+
   /* ── Lightbox / onboarding ── */
   $('#mlClose').addEventListener('click', () => $('#makeupLightbox').classList.remove('show'));
   $('#makeupLightbox').addEventListener('click', (e) => {
     if (e.target.id === 'makeupLightbox') $('#makeupLightbox').classList.remove('show');
   });
 
-  $('#obStart').addEventListener('click', () => {
+  $('#obFocusChoices').addEventListener('click', (e) => {
+    const button = e.target.closest('[data-focus]');
+    if (!button) return;
+    const area = button.dataset.focus;
+    if (onboardingFocus.includes(area)) onboardingFocus = onboardingFocus.filter((item) => item !== area);
+    else if (onboardingFocus.length < 2) onboardingFocus.push(area);
+    else {
+      onboardingFocus.shift();
+      onboardingFocus.push(area);
+    }
+    renderOnboardingFocus();
+  });
+
+  const finishOnboarding = (focusAreas) => {
     const s = getSettings();
     s.onboarded = true;
+    s.focusAreas = focusAreas;
+    const today = getRecord(localDateKey());
+    today.lowEnergy = true;
+    today.focusTaskKeys = starterKeys(focusAreas);
     // gentle sample weekly goals for the first week
     const wk = mondayOf(localDateKey());
     if (!s.bodyGoals[wk] || !s.bodyGoals[wk].length) {
@@ -2340,19 +2540,43 @@ function bindEvents() {
     }
     saveSettings();
     $('#onboarding').style.display = 'none';
-    toast('Day 1 · 从一个最小行动开始 ☾');
-  });
+    renderToday();
+    showRitual('你的轻量起点准备好了', '今天只需要完成三个最小行动。', 'ph ph-plant');
+  };
+
+  $('#obStart').addEventListener('click', () => finishOnboarding([...onboardingFocus]));
+  $('#obSkip').addEventListener('click', () => finishOnboarding([]));
 }
 
 /* ═══════════ Init ═══════════ */
 function init() {
   records = loadRecords();
   const s = getSettings();
+  onboardingFocus = Array.isArray(s.focusAreas) ? s.focusAreas.slice(0, 2) : [];
   $('#paymentTime').value = nowTime();
   bindEvents();
+  renderOnboardingFocus();
+  renderInstallState();
   renderPage();
   if (!s.onboarded) $('#onboarding').style.display = '';
   initCloud();
+  registerPWA();
+
+  window.addEventListener('beforeinstallprompt', (event) => {
+    event.preventDefault();
+    deferredInstallPrompt = event;
+    renderInstallState();
+  });
+  window.addEventListener('appinstalled', () => {
+    deferredInstallPrompt = null;
+    renderInstallState();
+    showRitual('已经住进你的主屏幕', '以后打开 Selene，只需要轻轻一点。', 'ph ph-device-mobile');
+  });
+  window.addEventListener('offline', () => setCloudStatus('离线记录中 · 数据保存在本地', 'error'));
+  window.addEventListener('online', () => {
+    setCloudStatus('网络已恢复 · 正在同步', 'syncing');
+    if (cloudClient) syncCloud(); else initCloud();
+  });
 }
 
 init();

@@ -1,38 +1,66 @@
-# Project Selene · Life Archive Design QA
+# Project Selene · 柔光女性杂志 Design QA
 
-- selected visual truth: `/Users/liyuening/.codex/generated_images/019f63ac-444a-7f10-8f90-612e15637652/exec-f8a093d7-a8d0-4252-ae47-c087bef6ab98.png`
-- implementation screenshot: `/Users/liyuening/Documents/daily-negentropy-app/profile-implementation.png`
-- combined comparison input: `/Users/liyuening/Documents/daily-negentropy-app/design-comparison.png`
-- target state: mobile, 我的生活档案, real local data loaded
+- source visual truth: `/Users/liyuening/Documents/daily-negentropy-app/design-reference-editorial.png`
+- implementation screenshot: `/Users/liyuening/Documents/daily-negentropy-app/qa/editorial-white-home.png`
+- full comparison input: `/Users/liyuening/Documents/daily-negentropy-app/qa/editorial-comparison.png`
+- secondary-page evidence: `/Users/liyuening/Documents/daily-negentropy-app/qa/editorial-growth.png`, `/Users/liyuening/Documents/daily-negentropy-app/qa/editorial-profile.png`
+- intended viewport: mobile web app, 390 × 844 CSS px
+- stable browser capture: centered 430 CSS px app surface inside the in-app browser; source 853 × 1844 px normalized to 430 × 930 px, implementation 430 × 1710 px, focused comparison 880 × 930 px
+- state: local-only preview, onboarding completed, Today page at 0% energy, all cloud writes disabled
 
-## Full-view comparison
+## Findings
 
-The selected Direction 02 and the final implementation were placed in the same side-by-side comparison image and inspected at original detail. The implementation carries over the reference's warm paper base, editorial serif hierarchy, dried-rose accents, analog photography, archive counters, July memory strip, lightly ruled paper cards, and fixed five-item navigation. Existing product content remains longer than the concept mock because identity, goal, principles, minimum actions, guide, and data tools were intentionally preserved.
+No actionable P0, P1, or P2 findings remain.
 
-## Focused findings and fixes
+- Hero photography now follows the selected reference
+  - Location: Today hero.
+  - Evidence: a dedicated photorealistic indoor editorial portrait now matches the reference's loose updo, ivory knit, warm diagonal window light, right-side subject placement, and quiet feminine expression.
+  - Rationale: the user explicitly prioritized the earlier reference image and high visual fidelity over retaining the sunset portrait.
+- Accepted responsive difference — document length
+  - Location: full Today page.
+  - Evidence: the concept compresses the complete journey into one generated frame; the implementation retains real tappable controls, labels, record states, and safe spacing, so its complete document is taller.
+  - Rationale: the hierarchy and above-the-fold composition match while preserving usable hit targets and existing product behavior.
 
-- [P1] The first archive build still loaded the prior JavaScript cache key, so the new archive counters rendered as zero.
-  - Fix: advanced the application cache key to `archive1`; verified the live local state now renders 29 accompanied days, 29 entries, and 1 stored photo.
-- [P1] The original home layout retained garden-specific high-specificity rules and did not fully adopt the archive surface.
-  - Fix: added explicit archive home overrides for the paper hero, energy card, timeline cards, photography, and record action.
-- [P1] Five growth modules risked becoming hidden after reducing the primary navigation.
-  - Fix: retained a Growth contents page with direct access to Body, Beauty, Style, Career, and Finance; every destination was opened and its original controls were confirmed present.
-- [P2] Secondary pages initially shared color tokens but not a coherent archive composition.
-  - Fix: unified their page headers, paper cards, labels, inputs, buttons, photo treatments, statistics, and active-navigation treatment.
+## Required Fidelity Surfaces
 
-## Interaction and layout verification
+- Fonts and typography: high-contrast Noto Serif SC/Georgia display hierarchy and Noto Sans SC UI text match the editorial reference; masthead tracking, burgundy chapter numbers, vertical department labels, and small captions are present.
+- Spacing and layout rhythm: asymmetric hero, hairline section rules, three numbered departments, generous negative space, pill record action, and five-item fixed navigation match the selected direction. No horizontal overflow was found.
+- Colors and visual tokens: pure white, ink, burgundy, blush, and champagne tokens are applied across Today and every secondary page. The document, app shell, and hero all resolve to `rgb(255, 255, 255)`. Default orange focus styling was replaced with a burgundy accessible focus ring.
+- Image quality and asset fidelity: the new high-resolution indoor portrait is intentionally cropped to the reference composition; existing journaling still lifes were reused; a dedicated photorealistic candle-and-journal evening asset remains installed. No placeholders or code-drawn image substitutes remain.
+- Copy and content: the date, greeting, energy state, three daily moments, record CTA, persistence messaging, and five navigation labels remain intact.
 
-- Today, Track, Journal, Growth, and Me activate their expected page.
-- Body, Beauty, Style, Career, and Finance open from Growth with their original inputs, buttons, galleries, charts, and records intact.
-- The five child pages rendered with no horizontal overflow.
-- Profile identity, goal, principles, minimum actions, guide, import, export, and clear-data controls remain reachable.
+## Focused Evidence
+
+- Hero and energy: the source and implementation share the same left-aligned masthead, oversized greeting, right-side portrait crop, issue/date marker, and thin energy rule.
+- Daily departments: the source and implementation use numbered `01/02/03` sections, vertical English labels, Chinese editorial headings, one supporting image per section, and restrained inline actions.
+- Secondary pages: Growth reads as a contents page with a photographic header and ruled module list; Profile reads as a closing feature story with an editorial cover, monthly photo strip, identity statement, goal, and principles.
+
+## Comparison History
+
+- Pass 1: the Afternoon department created an extra implicit grid row and remained 430 px tall.
+  - Fix: pinned the index, content, and image to one grid row and removed the inherited 150 px action height.
+  - Post-fix evidence: all three departments render as a consistent single-row editorial sequence; measured heights are aligned without hidden content.
+- Pass 2: the Growth intro retained the previous archive paper texture and clicked navigation inherited a browser-orange focus ring.
+  - Fix: removed the texture with an explicit transparent editorial surface and added a burgundy `:focus-visible` treatment.
+  - Post-fix evidence: Growth and Profile screenshots show the unified warm-ivory, hairline-rule system.
+- Pass 3: the user requested a true white base and closer fidelity to the original indoor portrait.
+  - Fix: changed the document, shell, cards, PWA theme, and hero field to pure white; generated and installed `assets/editorial-hero-portrait.png`; updated the service-worker cache.
+  - Post-fix evidence: computed body, shell, and hero backgrounds are all pure white; the hero pseudo-element loads the new asset; focused Today, Growth, and Profile checks show no horizontal overflow.
+
+## Interaction Verification
+
+- Main navigation: Today, Progress, Journal, Growth, and Profile all activated the expected page.
+- Growth modules: Body, Beauty, Style, Career, and Finance all opened successfully.
+- Existing controls preserved: 31 Body controls, 119 Beauty controls, 42 Style controls, 9 Career controls, and 9 Finance controls were present in the tested local state.
+- Horizontal overflow: none across all tested parent and child pages.
 - Browser console errors and warnings: none.
 - `node --check app.js`: passed.
-- duplicate HTML IDs: none.
+- `node --check sw.js`: passed.
+- `manifest.webmanifest`: valid JSON.
 - `git diff --check`: passed.
 
-## Visual judgment
+## Follow-up Polish
 
-The final UI is recognizably the selected scrapbook/archive direction rather than a palette-only reskin. It is quieter and more structured than the concept mock to support the application's dense functional pages, while retaining its feminine, reflective, analog character. No actionable P0, P1, or P2 issues remain.
+- P3: no additional visual polish is required for the requested white/high-fidelity pass.
 
 final result: passed

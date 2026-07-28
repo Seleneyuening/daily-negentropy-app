@@ -3,14 +3,20 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <meta name="theme-color" content="#f7f3ec">
+  <meta name="theme-color" content="#ffffff">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Selene">
   <title>Project Selene · 成为镜子里的自己也会喜欢的人</title>
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;600&family=Noto+Serif+SC:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css">
   <link rel="stylesheet" href="style.css?v=archive1">
-  <link rel="stylesheet" href="selene-garden.css?v=archive2">
+  <link rel="stylesheet" href="selene-garden.css?v=light6">
+  <link rel="stylesheet" href="magazine-editorial.css?v=editorial8">
 </head>
 <body>
   <div class="app-shell">
@@ -19,7 +25,7 @@
       <div>
         <h1 class="brand">Project Selene <i class="ph ph-moon-stars brand-moon" aria-hidden="true"></i></h1>
         <p class="brand-sub">Becoming the woman I want to see in the mirror.</p>
-        <p class="cloud-status" id="cloudStatus">本地保存 · 正在连接云端</p>
+        <button class="cloud-status" id="cloudStatus" type="button">本地保存 · 正在连接云端</button>
       </div>
       <button class="icon-button" id="jumpToday" type="button" aria-label="回到今天"><i class="ph ph-calendar-dot" aria-hidden="true"></i></button>
     </header>
@@ -64,8 +70,9 @@
 
         <section class="garden-dayline" aria-label="今天的生活时间轴">
           <article class="garden-moment morning">
-            <time>07:30</time>
-            <span class="garden-moment-icon"><i class="ph ph-sun" aria-hidden="true"></i></span>
+            <div class="magazine-index">
+              <b>01</b><span>MORNING</span><time>07:30</time>
+            </div>
             <div class="garden-moment-content">
               <h2>晨间习惯</h2>
               <p>为自己种下今天的好状态</p>
@@ -75,16 +82,18 @@
                 <i class="ph ph-plus" aria-hidden="true"></i>
               </button>
             </div>
+            <img class="magazine-moment-photo" src="assets/selene-garden-morning.jpg" alt="晨光里的花与手账">
           </article>
 
           <article class="garden-moment afternoon">
-            <time>14:20</time>
-            <span class="garden-moment-icon"><i class="ph ph-camera" aria-hidden="true"></i></span>
+            <div class="magazine-index">
+              <b>02</b><span>AFTERNOON</span><time>14:20</time>
+            </div>
+            <img class="magazine-moment-photo" src="assets/archive-journal.jpg" alt="在午后写下灵感">
             <div class="garden-moment-content">
               <h2>午后灵感</h2>
               <p>捕捉片刻美好与灵感</p>
               <div class="garden-inspiration-row">
-                <img src="assets/selene-garden-morning.jpg" alt="暖阳下的花、茶与手账">
                 <button class="garden-photo-action photo-upload-btn" data-ptype="全身" type="button">
                   <i class="ph ph-plus" aria-hidden="true"></i><span>添加照片<br>或灵感</span>
                 </button>
@@ -93,8 +102,9 @@
           </article>
 
           <article class="garden-moment evening">
-            <time>21:30</time>
-            <span class="garden-moment-icon"><i class="ph ph-moon" aria-hidden="true"></i></span>
+            <div class="magazine-index">
+              <b>03</b><span>EVENING</span><time>21:30</time>
+            </div>
             <div class="garden-moment-content">
               <h2>夜间复盘</h2>
               <p>回顾今天，收获成长</p>
@@ -104,6 +114,7 @@
                 <i class="ph ph-plus" aria-hidden="true"></i>
               </button>
             </div>
+            <img class="magazine-moment-photo" src="assets/editorial-evening.png" alt="烛光、手账与夜间复盘">
           </article>
         </section>
 
@@ -323,7 +334,11 @@
             </div>
             <button class="primary-button full" type="submit">记一笔</button>
           </form>
-          <div class="empty-state" id="paymentEmpty">今天还没有付款记录。</div>
+          <div class="gentle-empty compact" id="paymentEmpty">
+            <i class="ph ph-receipt" aria-hidden="true"></i>
+            <div><b>今天还没有付款记录</b><p>从一笔小记录开始，就能慢慢看见生活的流向。</p></div>
+            <button type="button" data-empty-action="payment">记下第一笔</button>
+          </div>
           <div class="payment-list" id="paymentList"></div>
         </section>
 
@@ -358,6 +373,12 @@
           <p class="section-kicker">PROGRESS</p>
           <h2>进步记录</h2>
         </div>
+
+        <section class="progress-welcome" id="progressWelcome" hidden>
+          <span><i class="ph ph-sparkle" aria-hidden="true"></i></span>
+          <div><p class="section-kicker">YOUR FIRST TRACE</p><h3>第一天不需要有趋势</h3><p>今天留下的一项行动、一句话或一张照片，都会成为未来可回看的起点。</p></div>
+          <button type="button" data-empty-action="today-action">回到今天，完成第一项</button>
+        </section>
 
         <section class="card section-card">
           <div class="section-heading">
@@ -878,6 +899,14 @@
           </ul>
         </details>
 
+        <section class="card section-card pwa-card" id="pwaCard">
+          <div class="pwa-copy">
+            <span class="pwa-icon"><i class="ph ph-device-mobile" aria-hidden="true"></i></span>
+            <div><p class="section-kicker">ON YOUR PHONE</p><h3>把 Selene 放到主屏幕</h3><p id="installAppHint">像 App 一样打开，网络不稳定时也能继续记录。</p></div>
+          </div>
+          <button class="ghost-button" id="installAppBtn" type="button">安装到主屏幕</button>
+        </section>
+
         <section class="card section-card">
           <div class="section-heading">
             <div><p class="section-kicker">DATA</p><h3>数据管理</h3></div>
@@ -907,6 +936,15 @@
 
   <div class="toast" id="toast" role="status"></div>
 
+  <div class="ritual-feedback" id="ritualFeedback" aria-live="polite" aria-hidden="true">
+    <div class="ritual-card">
+      <span class="ritual-icon"><i class="ph ph-sparkle" aria-hidden="true"></i></span>
+      <p class="section-kicker">A SMALL WIN</p>
+      <strong id="ritualTitle">已经开始了</strong>
+      <span id="ritualText">一个小动作，也在改变今天。</span>
+    </div>
+  </div>
+
   <div class="makeup-lightbox" id="makeupLightbox">
     <span class="ml-close" id="mlClose">×</span>
     <img id="mlImg" alt="照片">
@@ -915,19 +953,26 @@
 
   <div class="onboarding" id="onboarding" style="display:none">
     <div class="ob-card">
-      <p class="ob-moon"><i class="ph ph-plant" aria-hidden="true"></i></p>
-      <h2>Project Selene</h2>
-      <p class="ob-sub">Becoming the woman I want to see in the mirror.<br>成为镜子里的自己也会喜欢的人。</p>
-      <ul class="ob-list">
-        <li><b>每天 8 个小任务</b><br>完成 5 项就算成功，不需要完美。</li>
-        <li><b>温柔地记录变化</b><br>照片、身体数据、妆容练习、穿搭，只和过去的自己比较。</li>
-        <li><b>每周轻复盘</b><br>少一点目标，更多完成。中断了也可以随时重新开始。</li>
-      </ul>
-      <button class="primary-button full" id="obStart" type="button">开始 Day 1 <i class="ph ph-arrow-right" aria-hidden="true"></i></button>
+      <p class="ob-kicker">START GENTLY · 从轻一点开始</p>
+      <h2>最近最想照顾的，<br>是哪两件事？</h2>
+      <p class="ob-sub">选择 1–2 个方向，我们只为今天准备三个最小行动。以后随时可以调整。</p>
+      <div class="ob-focus-grid" id="obFocusChoices" aria-label="选择关注方向">
+        <button type="button" data-focus="护肤" aria-pressed="false"><i class="ph ph-drop" aria-hidden="true"></i><span><b>护肤</b><small>清洁、保湿、防晒</small></span></button>
+        <button type="button" data-focus="身体" aria-pressed="false"><i class="ph ph-person-simple-walk" aria-hidden="true"></i><span><b>身体</b><small>走路、饮食、体态</small></span></button>
+        <button type="button" data-focus="形象" aria-pressed="false"><i class="ph ph-sparkle" aria-hidden="true"></i><span><b>形象</b><small>妆容、穿搭、照片</small></span></button>
+        <button type="button" data-focus="事业" aria-pressed="false"><i class="ph ph-briefcase" aria-hidden="true"></i><span><b>事业</b><small>内容、项目、创作</small></span></button>
+        <button type="button" data-focus="情绪" aria-pressed="false"><i class="ph ph-moon-stars" aria-hidden="true"></i><span><b>情绪</b><small>心情、复盘、休息</small></span></button>
+      </div>
+      <div class="ob-preview" id="obStarterPreview">
+        <p>今天的三个最小行动</p>
+        <ul id="obStarterList"><li>选择一个方向后，这里会为你准备行动。</li></ul>
+      </div>
+      <button class="primary-button full" id="obStart" type="button" disabled>用这三个小行动开始 <i class="ph ph-arrow-right" aria-hidden="true"></i></button>
+      <button class="text-button ob-skip" id="obSkip" type="button">暂时跳过，使用默认行动</button>
     </div>
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="app.js?v=archive1"></script>
+  <script src="app.js?v=light6"></script>
 </body>
 </html>
